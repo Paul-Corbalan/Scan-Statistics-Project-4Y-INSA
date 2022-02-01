@@ -1,0 +1,131 @@
+---
+title: "Evaluation of the performance of the new statistical tool"
+output: pdf_document
+---
+\tableofcontents
+
+In this part, we will try to generate a dataset and study the premises of the scan statistic methods.
+To do so, we will use different types of data: either it will be a dataset we created ourselves, or a dataset that we studied last semester in Statistical Modeling. This dataset, called _SAheart_. This dataset is a compilation of 462 observations following 10 variables to explain the occurrence of a coronary heart disease.
+
+\section{1. Study of a random dataset, with given law of probability}
+In this section, we will try to randomly simulate a sample, given a known law of probability. To do so, we will use the R built-in function to simulate a variable of distribution $\mathcal{U}[0,1]$, and use the Monte Carlo's method to create these sample. The idea is to see if there are any irregularities to this dataset for random laws. 
+
+\subsection{1.1. Simulation of random samples, for a continiuous law of probability}
+We will first try to create a sample of known-distribution, for instance, an exponential distribution of whom we know the value of the parameter $\lambda$. Thus, we will take $\displaystyle\lambda=\frac{1}{1500}$.
+For instance, let's consider that the sample created $X$ represent the lifetime of $n=100$ bulbs. Hence, if we create a dataset of law $\mathcal{E}(\lambda)$, then the average lifetime of a bulb. is equal to $$\mathbb{E}[X]=\frac{1}{\lambda}=1500$$.
+To create this sample, we will use a Monte Carlo method. Indeed, if $U\sim \mathcal{U}[0,1]$, $X\sim \mathcal{E}(\lambda)$, and if we denote $u$ a simulation of law $U$, then we have that $$x=\frac{\ln(1-u)}{\lambda}$$ is a simulation of the same distribution as $X$. 
+
+```{r}
+n=100
+u=runif(n,0,1)
+x=c(1:n)*0
+lamb=1/1500
+x=-log(1-u)/lamb
+```
+This Monte Carlo method generates automatically a $n$-sample (where $n=100$). We can verify, using Kolmogorov-Smirnov adequacy test, that the created sample is following an exponential distribution, considering a certain error $\alpha$. The alternative `two.sided` will test:
+$$\mathcal{H}_0: F=F_X \quad \text{vs.} \quad \mathcal{H}_1: F\ne F_X $$
+where $F$ denotes the cumulative distribution function of the exponential law $\mathcal{E}(\lambda)$, and $F_X$ the cumulative distribution function of the sample of law $X$. 
+
+```{r}
+ks.test(x,pexp,1/1500, alternative="two.sided")
+
+```
+Here, since the p-value is larger than $\alpha=5\%$, we can conclude that the dataset we generated is following an exponential distribution of parameter $\lambda$, given a level of confidence $1-\alpha$. 
+
+\subsection{1.2. Insertion of random irregularities of a given law of probability}
+In order to test the method of scan statistic, we will randomly change $m=30$ variables in the sample. Logically, if the n-sample is distributed given an exponential law, then, since we use a Monte-Carlo method to create the sample, then all the variables are distributed according to this law of probability. Hence, any subset of the sample is distributed given this law of probability. \
+Inserting randomized values of another law of probability will allow us to test if we have some significant changes of data, and will illustrate the scan statistic method. 
+
+```{r}
+m=30 #number of changes
+index=floor(runif(m,1,n))
+lamb2=1/500
+y=x
+
+for (i in 1:m){
+  u=runif(1,0,1)
+  y[index[i]]=-log(1-u)/lamb2}
+```
+Here if we apply Kolmogorov-Smirnov adequacy test, we obtain the following result:
+```{r}
+ks.test(y,pexp,1/1500, alternative="two.sided")
+result=ks.test(y,pexp,1/1500, alternative="two.sided")
+print(result$statistic)
+```
+
+We can see that if we change randomly 40 out of 100 data, then the Kolmogorov-Smirnov adequacy test reject the null hypothesis. Hence, the fact that the sample is distributed given an exponential law of parameter $\displaystyle\lambda=\frac{1}{1500}$.
+
+\subsection{1.3. First implementation of a scan statistic method}
+
+Then, we can try to implement a method of scan statistic that will study the Kolmogorov-Smirnov statistic of test. The idea is to find the range of elements of the sample that has the largest statistic of test, that is to say to find the range where the distribution is less-likely to be compared to an exponential distribution of parameter $\displaystyle \lambda=\frac{1}{1500}$.
+We will try to implement this method of statistic scan on a constant window of size $10$. Then, each window will go through all the data set, until we reach its end. 
+
+```{r}
+n=100
+size=10
+max=0
+rangemax=c(1:size)*0
+start=1
+end=size
+
+for (i in 1:(n-size)){
+  result=ks.test(y[start:end],pexp,1/1500, alternative="two.sided")
+  compared=result$statistic
+  if (compared > max){max=compared
+  rangemax=c(start:end)}
+  start=start+1
+  end=end+1
+} 
+print(max)
+print(rangemax)
+```
+This code is a first implementation of a scan statistic on a given set of known probability, with some randomization. Here, we can see that, if we consider a constant-sized window, then the set with the largest Kolmogorov-Smirnov test statistic is given by `maxrange`. Hence, if we consider a serial number on the production of bulbs, then the set we will try to adjust will be the one given by `maxrange`.
+
+
+We can try to change the size of the window using the exact same code, and ammending the value of `size`.
+
+```{r}
+size=5
+max=0
+rangemax=c(1:size)*0
+start=1
+end=size
+
+for (i in 1:(n-size)){
+  result=ks.test(y[start:end],pexp,1/1500, alternative="two.sided")
+  compared=result$statistic
+  if (compared > max){max=compared
+  rangemax=c(start:end)}
+  start=start+1
+  end=end+1
+} 
+print(max)
+print(rangemax)
+```
+With `size=5`, we find that the subset with maximal test statistic is a subset of the one found for `size=10`. In terms of p-value:
+```{r}
+print(ks.test(y[rangemax],pexp,1/1500, alternative="two.sided")$p.value)
+```
+At level $\alpha=5\%$, we reject the null hypothesis. 
+
+If we study the original `x` sample, we observe:
+```{r}
+size=10
+max=0
+rangemax=c(1:size)*0
+start=1
+end=size
+
+for (i in 1:(n-size)){
+  result=ks.test(x[start:end],pexp,1/1500, alternative="two.sided")
+  compared=result$statistic
+  if (compared > max){max=compared
+  rangemax=c(start:end)}
+  start=start+1
+  end=end+1
+} 
+print(max)
+print(rangemax)
+print(ks.test(y[rangemax],pexp,1/1500, alternative="two.sided")$p.value)
+```
+Hence, we can see that, in the dataset `x`, wihtout any irregularities, there are some window where the scan statistic is already detecting some problems. The range `rangemax` does not have to be the same as the one with random data. 
