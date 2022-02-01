@@ -129,3 +129,54 @@ print(rangemax)
 print(ks.test(y[rangemax],pexp,1/1500, alternative="two.sided")$p.value)
 ```
 Hence, we can see that, in the dataset `x`, wihtout any irregularities, there are some window where the scan statistic is already detecting some problems. The range `rangemax` does not have to be the same as the one with random data. 
+
+```{r}
+repe=100
+# longueur de chaque séquence
+n=200
+
+mu0 = 1/1500
+s0 = 1
+
+mu1 = 1/500
+s1 = 1
+
+SL_vect=vector(length=repe) # vecteur contenant le score local pour chaque séquence
+for (j in 1:repe)
+{
+  cat('\n repe=',j)
+  w.E=0 # initialisation de W (processus de Lindley) pour la séquence j
+  SL=0 # init du score local pour la séquence j
+  for (i in 1:n) {
+    a=rnorm(1,mean=mu0,sd=s0) # ici simulation d'une observation loi normale ; on peut aussi aller lire une observation dans un fichier de données
+    s.E=floor(w.E*log(dnorm(a,mean=mu1,sd=s1)/dnorm(a,mean=mu0,sd=s0))) # calcul du score LLR associé à l'observation a
+    w.E=max(0,w.E+s.E) # calcul de la valeur W à l'indice j
+    if (w.E>SL) SL=w.E # actualisation du score local, cf. SL=max_j Wj
+  }
+  SL_vect[j]=SL # remplissage du vecteur des valeur de score local
+}
+SL_vect
+```
+
+```{r}
+repe=100
+# longueur de chaque séquence
+n=200
+
+nu = 1/1500
+
+T = 10
+
+SL_vect=vector(length=repe) # vecteur contenant le score local pour chaque séquence
+for (j in 1:repe)
+{
+  cat('\n repe=',j)
+  T_n=rgamma(n,nu)
+  list_t = linspace(0, T, n = n)
+  for (i in 1:n) {
+    a=ndunif(min = 0, max = T) # ici simulation d'une observation loi normale ; on peut aussi aller lire une observation dans un fichier de données
+  }
+  SL_vect[j]=SL # remplissage du vecteur des valeur de score local
+}
+SL_vect
+```
