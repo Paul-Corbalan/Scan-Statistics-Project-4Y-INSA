@@ -160,9 +160,9 @@ n2=length(pp2)
 tbe2=pp2[2:n2]-pp2[1:n2-1]
 tbe2
 
-ks.test(tbe1,pexp,lambda1*Ti, alternative="two.sided")
+ks.test(tbe1,pexp,lambda1, alternative="two.sided")
 
-ks.test(tbe2,pexp,lambda2*Ti, alternative="two.sided")
+ks.test(tbe2,pexp,lambda2, alternative="two.sided")
 
 
 
