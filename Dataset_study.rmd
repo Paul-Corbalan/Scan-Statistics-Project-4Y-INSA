@@ -167,7 +167,7 @@ tbe2
 
 Import data of rainfall in France every 3 hours.
 ```{r}
-Rain_Dataset = read.csv("synop.202202.csv", sep = ";")
+Rain_Dataset = read.csv("data/synop.202202.csv", sep = ";")
 print("Rain Dataset")
 summary(Rain_Dataset)
 
