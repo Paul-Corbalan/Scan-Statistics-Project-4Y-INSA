@@ -237,3 +237,21 @@ Rain_Dataset_Red[,'rr3'] = as.numeric(Rain_Dataset_Red[,'rr3'])
 summary(Rain_Dataset_Red)
 head(Rain_Dataset_Red)
 ```
+
+Local score
+```{r}
+library("localScore")
+
+X = floor(log(dexp(tbe1, rate = lambda1)/dexp(tbe1, rate = lambda0)))
+
+max_X = max(X)
+min_X = min(X)
+P_X = table(X)/length(X)
+hist(X)
+
+localScoreC_double(X)
+
+l = list()
+l[["X"]] = X
+result = automatic_analysis(l, "iid")
+```
