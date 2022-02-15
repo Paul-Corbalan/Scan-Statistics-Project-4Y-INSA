@@ -140,14 +140,14 @@ PoissonProcess <- function(lambda,T) {
 
 
 
-lambda1=2
-lambda2=3
+lambda0=2
+lambda1=3
 Ti=10
-pp1=PoissonProcess(lambda1,Ti)
+pp1=PoissonProcess(lambda0,Ti)
 print(pp1)
 plot(c(0,pp1),0:length(pp1),type="s",xlab="time t",ylab="number of events by time t")
 
-pp2=PoissonProcess(lambda2,Ti)
+pp2=PoissonProcess(lambda1,Ti)
 print(pp2)
 plot(c(0,pp2),0:length(pp2),type="s",xlab="time t",ylab="number of events by time t")
 
@@ -160,9 +160,9 @@ n2=length(pp2)
 tbe2=pp2[2:n2]-pp2[1:n2-1]
 tbe2
 
-ks.test(tbe1,pexp,lambda1, alternative="two.sided")
+ks.test(tbe1,pexp,lambda0, alternative="two.sided")
 
-ks.test(tbe2,pexp,lambda2, alternative="two.sided")
+ks.test(tbe2,pexp,lambda1, alternative="two.sided")
 
 
 
@@ -177,13 +177,13 @@ Je reprends votre code pour faire un data set :
 
 ```{r}
 # Etape 1 : simu Poisson process sous H0
-ppH0=PoissonProcess(lambda1,Ti)
+ppH0=PoissonProcess(lambda0,Ti)
 ppH0
 length(ppH0)
 
 # Etape 2 : creation d'un segment sous H1
 tau= 2.5 # longeur de l'intervalle modifie, a fortiori tau < Ti
-ppH1.segt=PoissonProcess(lambda2,tau)
+ppH1.segt=PoissonProcess(lambda1,tau)
 ppH1.segt
 length(ppH1.segt)
 
