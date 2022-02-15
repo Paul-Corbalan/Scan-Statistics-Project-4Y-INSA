@@ -220,6 +220,8 @@ list0=data.frame(ProcessusPoissonH0=ppH0,
          TimeBetweenEventH0=tbe0)
 list0
 
+poisson=list0[,1]
+poisson
 ```
 
 Import data of rainfall in France every 3 hours.
