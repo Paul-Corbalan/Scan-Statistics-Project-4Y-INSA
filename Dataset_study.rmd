@@ -238,6 +238,24 @@ summary(Rain_Dataset_Red)
 head(Rain_Dataset_Red)
 ```
 
+SST
+```{r}
+T = 1.
+tau = .25
+table_ppH1 = table(ppH1)
+sst = -1
+for (i in seq(0,(T-tau)/tau)){
+    t = i*tau
+    print(i)
+    partial_sst = length(table_ppH1[names(table_ppH1)>=t && names(table_ppH1)<=t+tau])
+    print(partial_sst)
+    if (sst<partial_sst) {
+       sst = partial_sst
+    }
+}
+sst
+```
+
 Local score
 ```{r}
 library("localScore")
