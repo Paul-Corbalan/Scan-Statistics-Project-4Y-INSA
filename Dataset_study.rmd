@@ -259,17 +259,15 @@ sst
 Local score
 ```{r}
 library("localScore")
-
-X = floor(log(dexp(tbe1, rate = lambda1)/dexp(tbe1, rate = lambda0)))
+E = 10
+X = floor(E*log(dexp(tbe1, rate = lambda1)/dexp(tbe1, rate = lambda0)))
 
 max_X = max(X)
 min_X = min(X)
-P_X = table(X)/length(X)
-hist(X)
+P_X = table(factor(X, levels = min_X:max_X))/length(X)
 
-localScoreC_double(X)
+LS=localScoreC(X)$localScore[1]
 
-l = list()
-l[["X"]] = X
-result = automatic_analysis(l, "iid")
+result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
+result
 ```
