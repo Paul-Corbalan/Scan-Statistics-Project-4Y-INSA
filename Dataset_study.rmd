@@ -133,16 +133,9 @@ Hence, we can see that, in the dataset `x`, wihtout any irregularities, there ar
 Now we will use another method using the uniform distribution in order to implement a Poisson Process.
 
 ```{r}
-
 PoissonProcess <- function(lambda,T) {
   return(sort(runif(rpois(1,lambda*T),0,T)))
-}
 
-
-
-lambda0=2
-lambda1=3
-Ti=10
 pp1=PoissonProcess(lambda0,Ti)
 print(pp1)
 plot(c(0,pp1),0:length(pp1),type="s",xlab="time t",ylab="number of events by time t")
@@ -164,9 +157,6 @@ ks.test(tbe1,pexp,lambda0, alternative="two.sided")
 
 ks.test(tbe2,pexp,lambda1, alternative="two.sided")
 
-
-
-
 ```
 The Kolmogorov-Smirnov test rejects the hypothesis that the time between events sequence is following an exponential distribution. 
 
@@ -176,52 +166,70 @@ Je reprends votre code pour faire un data set :
 
 
 ```{r}
+PoissonProcess <- function(lambda,T) {
+  return(sort(runif(rpois(1,lambda*T),0,T)))
+}
+
 # Etape 1 : simu Poisson process sous H0
 ppH0=PoissonProcess(lambda0,Ti)
-ppH0
-length(ppH0)
 
 # Etape 2 : creation d'un segment sous H1
-tau= 2.5 # longeur de l'intervalle modifie, a fortiori tau < Ti
+tau= 3 # longeur de l'intervalle modifie, a fortiori tau < Ti
 ppH1.segt=PoissonProcess(lambda1,tau)
-ppH1.segt
-length(ppH1.segt)
 
 # Etape 3 : insertion du segment dans la sequence H0
-dbt=runif(1,0,Ti-tau) # choix de l'indice de  temps ou va commencer le segment modifie
-dbt
+dbt=runif(1,0,Ti-tau) # choix de l'indice de  temps ou va commencer le segment modifié
+ppH0bis=PoissonProcess(lambda0,Ti)
 ppH1.repo=dbt+ppH1.segt # repositionnement des observations dans le temps
-ppH1.repo
-ppH0_avant=ppH0[which(ppH0<ppH1.repo[1])]
-ppH0_apres=ppH0[which(ppH0>ppH1.repo[length(ppH1.repo)])]
+ppH0_avant=ppH0bis[which(ppH0bis<ppH1.repo[1])]
+ppH0_apres=ppH0bis[which(ppH0bis>ppH1.repo[length(ppH1.repo)])]
 ppH1=c(ppH0_avant,ppH1.repo,ppH0_apres)
-ppH1
-length(ppH1)
 
 
 #time between events 
 n1=length(ppH1)
 tbe1=ppH1[2:n1]-ppH1[1:n1-1]
+tbe1=c(0,tbe1)
 
 n0=length(ppH0)
 tbe0=ppH0[2:n0]-ppH0[1:n0-1]
 
-tbe1=c(0,tbe1)
-tbe1
-
 list1=data.frame(ProcessusPoissonH1=ppH1,
          TimeBetweenEventH1=tbe1)
-list1
 
 tbe0=c(0,tbe0)
-tbe0
 
 list0=data.frame(ProcessusPoissonH0=ppH0,
          TimeBetweenEventH0=tbe0)
-list0
 
-poisson=list0[,1]
-poisson
+list0
+list1
+```
+
+```{r}
+
+lambda=2
+Tps=10
+tau=1
+pp=PoissonProcess(lambda,Tps)
+pp
+n=length(pp)
+n
+which(pp>(Tps-tau))
+stop=n-length(which(pp>(Tps-tau)))
+stop
+ScanStat=0
+for (i in (1:stop)) {
+  cat('\n i=',i)
+  cat('\t ppi=',pp[i])
+  x=which((pp>=pp[i])&(pp<=(pp[i]+tau)))
+  x
+  cat('\t which=',x)
+  scan=length(x)
+  cat(' scan=',scan)
+  if (scan>ScanStat) ScanStat=scan
+}
+ScanStat
 ```
 ```{r}
 
@@ -296,6 +304,7 @@ p
 
 
 ```
+
 
 Import data of rainfall in France every 3 hours.
 ```{r}
@@ -388,17 +397,15 @@ print(Rain_Dataset)
 Local score
 ```{r}
 library("localScore")
-
-X = floor(log(dexp(tbe1, rate = lambda1)/dexp(tbe1, rate = lambda0)))
+E = 10
+X = floor(E*log(dexp(tbe1, rate = lambda1)/dexp(tbe1, rate = lambda0)))
 
 max_X = max(X)
 min_X = min(X)
-P_X = table(X)/length(X)
-hist(X)
+P_X = table(factor(X, levels = min_X:max_X))/length(X)
 
-localScoreC_double(X)
+LS=localScoreC(X)$localScore[1]
 
-l = list()
-l[["X"]] = X
-result = automatic_analysis(l, "iid")
+result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
+result
 ```
