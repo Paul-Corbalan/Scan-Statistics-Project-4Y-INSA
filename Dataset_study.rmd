@@ -223,6 +223,79 @@ list0
 poisson=list0[,1]
 poisson
 ```
+```{r}
+
+lambda0=list(1:10)
+lambda1=list(1:10)
+#mu0=2
+
+E=10
+
+mu1=1
+
+for (mu0 in 1:10 ) {
+  #for (mu1 in 1:10) {
+repe=10^3
+# longueur de chaque séquence
+n=200
+SL_vect=vector(length=repe) # vecteur contenant le score local pour chaque séquence
+for (j in 1:repe)
+{
+  cat('\n repe=',j)
+  w.E=0 # initialisation de W (processus de Lindley) pour la séquence j
+  SL=0 # init du score local pour la séquence j
+  for (i in 1:n) {
+    a=rexp(1,mu0) # ici simulation d'une observation loi normale ; on peut aussi aller lire une observation dans un fichier de données
+    s.E=floor(E*log(dexp(a,mu0)/dexp(a,mean=mu0,sd=s0))) # calcul du score LLR associé à l'observation a
+    w.E=max(0,w.E+s.E) # calcul de la valeur W à l'indice j
+    if (w.E>SL) SL=w.E # actualisation du score local, cf. SL=max_j Wj
+  SL_vect[j]=SL # remplissage du vecteur des valeur de score local 
+  }
+}
+p <- hist(SL_vect)
+print(p)
+#}
+}
+SL_vect
+
+#p <- hist(SL_vect)
+#print(p)
+
+
+```
+
+
+```{r}
+library(stringr)
+
+E=10
+x=c(0.00,0.05,0.1,0.15,0.20)
+lambda1=2
+
+
+for (lambda0 in c(5,50,500,5000,50000) ) {
+  for (lambda1 in c(2,20,200,2000,20000) ) {
+  S_vect=vector(length=length(x))
+
+  for (j in 1:length(x))
+  {
+ 
+    S=0
+    A=1/(lambda0-lambda1)
+    B=A*log(lambda1/lambda0)
+    
+    S=floor(E*lambda0*exp(-lambda0*(A*x[j]-B)))
+    print(S) 
+    S_vect[j]=S
+}
+print(S_vect)
+p <- barplot(S_vect, main=str_c("lambda0=", as.character(lambda0), "et", "lambda1=", as.character(lambda1), sep=" "  ))
+p
+}
+}
+
+
+```
 
 Import data of rainfall in France every 3 hours.
 ```{r}
@@ -236,6 +309,8 @@ Rain_Dataset_Red[,'rr3'] = as.numeric(Rain_Dataset_Red[,'rr3'])
 
 summary(Rain_Dataset_Red)
 head(Rain_Dataset_Red)
+l=Rain_Dataset_Red[,1]
+l
 ```
 
 SST
@@ -255,6 +330,60 @@ for (i in seq(0,(T-tau)/tau)){
 }
 sst
 ```
+```{r}
+lambda=2
+ Tps=10
+ tau=1
+ pp=PoissonProcess(lambda,Tps)
+ pp
+ n=length(pp)
+ n
+ which(pp>(Tps-tau))
+ stop=n-length(which(pp>(Tps-tau)))
+ ScanStat=0
+ for (i in (1:stop)) {
+   cat('\n i=',i)
+   cat('\t ppi=',pp[i])
+   x=which((pp>=pp[i])&(pp<=(pp[i]+tau)))
+  cat('\t which=',x)
+   scan=length(x)
+   cat(' scan=',scan)
+   if (scan>ScanStat) ScanStat=scan
+ }
+ ScanStat
+```
+
+
+```{r}
+lambda=2
+ Tps=10
+ tau=1
+ pp=Rain_Dataset_Red[,1]
+ pp
+ n=length(pp)
+ n
+ which(pp>(Tps-tau))
+ stop=n-length(which(pp>(Tps-tau)))
+ ScanStat=0
+ for (i in (1:stop)) {
+   cat('\n i=',i)
+   #cat('\t ppi=',pp[i])
+   x=which((pp>=pp[i])&(pp<=(pp[i]+tau)))
+  cat('\t which=',x)
+   scan=length(x)
+   cat(' scan=',scan)
+   if (scan>ScanStat) ScanStat=scan
+ }
+ ScanStat
+ 
+```
+```{r}
+
+pp=Rain_Dataset_Red
+print(Rain_Dataset)
+
+```
+
 
 Local score
 ```{r}
