@@ -277,9 +277,31 @@ SL_vect
 library(stringr)
 
 E=10
-x=c(0.00,0.05,0.1,0.15,0.20)
+lambda0=1
 lambda1=2
+ 
 
+while (exp(-lambda0*max) > 10^(-9)){
+  max = max + 1 
+}
+max
+
+ # en fonction de lambda0 tq P(Expo(lambda
+#0)>=max)<10^-9 
+t=seq(0,max,0.1)
+x=floor(E*log(lambda1/lambda0)+(lambda0-lambda1)*t)
+head(x)
+range(x)
+s=seq(-15,6,0.1)
+##tronquer la queue des x (x négatifs)
+A=1/(lambda0-lambda1)
+B=A*log(lambda1/lambda0)
+proba.s=lambda0*exp(-lambda0*(A*s-B))
+proba.s
+barplot(proba.s)
+
+##trouver 1/lambda en fonction intervalle seq
+## ecart ou rapport entre les lambda qui est le + important ? 
 
 for (lambda0 in c(5,50,500,5000,50000) ) {
   for (lambda1 in c(2,20,200,2000,20000) ) {
@@ -295,7 +317,8 @@ for (lambda0 in c(5,50,500,5000,50000) ) {
     S=floor(E*lambda0*exp(-lambda0*(A*x[j]-B)))
     print(S) 
     S_vect[j]=S
-}
+  }
+  
 print(S_vect)
 p <- barplot(S_vect, main=str_c("lambda0=", as.character(lambda0), "et", "lambda1=", as.character(lambda1), sep=" "  ))
 p
