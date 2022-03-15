@@ -297,7 +297,7 @@ s=seq(-15,6,0.1)
 A=1/(lambda0-lambda1)
 B=A*log(lambda1/lambda0)
 proba.s=lambda0*exp(-lambda0*(A*s-B))
-proba.s
+proba.s = proba.s/sum(proba.s)
 barplot(proba.s)
 
 ##trouver 1/lambda en fonction intervalle seq
