@@ -315,10 +315,11 @@ for (lambda0 in c(5,50,500,5000,50000) ) {
     B=A*log(lambda1/lambda0)
     
     probaS=floor(E*lambda0*exp(-lambda0*(A*x[j]-B)))
-    print(S) 
+    # print(s) 
     probaS_vect[j]=probaS
   }
   
+probaS_vect = probaS_vect/sum(probaS_vect)
 print(probaS_vect)
 p <- barplot(probaS_vect, main=str_c("lambda0=", as.character(lambda0), "et", "lambda1=", as.character(lambda1), sep=" "  ))
 p
