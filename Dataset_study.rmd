@@ -305,22 +305,22 @@ barplot(proba.s)
 
 for (lambda0 in c(5,50,500,5000,50000) ) {
   for (lambda1 in c(2,20,200,2000,20000) ) {
-  S_vect=vector(length=length(x))
+  probaS_vect=vector(length=length(s))
 
   for (j in 1:length(x))
   {
  
-    S=0
+    
     A=1/(lambda0-lambda1)
     B=A*log(lambda1/lambda0)
     
-    S=floor(E*lambda0*exp(-lambda0*(A*x[j]-B)))
+    probaS=floor(E*lambda0*exp(-lambda0*(A*x[j]-B)))
     print(S) 
-    S_vect[j]=S
+    probaS_vect[j]=probaS
   }
   
-print(S_vect)
-p <- barplot(S_vect, main=str_c("lambda0=", as.character(lambda0), "et", "lambda1=", as.character(lambda1), sep=" "  ))
+print(probaS_vect)
+p <- barplot(probaS_vect, main=str_c("lambda0=", as.character(lambda0), "et", "lambda1=", as.character(lambda1), sep=" "  ))
 p
 }
 }
