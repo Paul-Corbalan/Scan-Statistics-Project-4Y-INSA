@@ -348,8 +348,8 @@ workpath = "."
 
 
 E=1
-lambda0=0.2
-lambda1=0.5
+lambda0=5
+lambda1=0.1
 max=0 
 
 while (exp(-lambda0*max) > 10^(-9)){
@@ -367,15 +367,19 @@ range(x)
 
 
 s=seq(min(x),max(x),0.1)
+s
 ##tronquer la queue des x (x négatifs)
 A=1/(lambda0-lambda1)
 B=A*log(lambda1/lambda0)
 proba.s=lambda0*exp(-lambda0*(A*s-B))
 proba.s = proba.s/sum(proba.s)
+proba.s
 barplot(proba.s)
 
+
+if (lambda0 < lambda1) {
 # Troncage à un score minimal
-minXk = as.numeric(s[max(which(proba.s<(probaseuilmin)))]) # On définit la classe pour proba < probaseuilmin
+minXk = as.numeric(s[max(which(proba.s<(probaseuilmin)))])# On définit la classe pour proba < probaseuilmin
 names(proba.s) = as.character(s)
 proba.s[as.character(minXk)] = sum(proba.s[which(proba.s<probaseuilmin)]) # probabilité de la classe SCORE < minXk
 score = s
@@ -383,7 +387,22 @@ score=score[which(score>=minXk)]
 proba.s = proba.s[which(s>=minXk)] # On ne garde que les scores supérieurs à minXk
 subtitle = paste("lambda0=",lambda0,";lambda1=",lambda1,";E=",E,sep="")
 barplot(proba.s, col="steelblue",xlab="Score",ylab="Probabilité", main = paste("Probabilité d'apparition de chaque score\nLoi géométrique : ",subtitle,sep=""))
-print(score)
+print(score) }
+
+probaseuilmax= 10^-5
+
+if (lambda1 < lambda0) {
+# Troncage à un score minimal
+maxXk = as.numeric(s[max(which(proba.s>(probaseuilmax)))])# On définit la classe pour proba < probaseuilmax
+names(proba.s) = as.character(s)
+proba.s[as.character(maxXk)] = sum(proba.s[which(proba.s>probaseuilmax)]) # probabilité de la classe SCORE < maxXk
+score = s
+score=score[which(score<=maxXk)]
+proba.s = proba.s[which(s<=maxXk)] # On ne garde que les scores inférieurs à maxXk
+subtitle = paste("lambda0=",lambda0,";lambda1=",lambda1,";E=",E,sep="")
+barplot(proba.s, col="steelblue",xlab="Score",ylab="Probabilité", main = paste("Probabilité d'apparition de chaque score\nLoi géométrique : ",subtitle,sep=""))
+print(score) }
+
 
 min(score)
 max(score)
