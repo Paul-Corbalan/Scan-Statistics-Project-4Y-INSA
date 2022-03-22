@@ -337,9 +337,19 @@ p
 
 library(stringr)
 
-E=10
-lambda0=1
-lambda1=2
+# Effacement des objets de l'environnement de travail
+rm(list=ls())
+
+# Chgt du nbr de chiffres après la virgule
+options("digits" = 15)
+
+# Chemin du dossier à adapter
+workpath = "."
+
+
+E=1
+lambda0=0.2
+lambda1=0.5
 max=0 
 
 while (exp(-lambda0*max) > 10^(-9)){
@@ -356,7 +366,7 @@ head(x)
 range(x)
 
 
-s=seq(-15,6,0.1)
+s=seq(min(x),max(x),0.1)
 ##tronquer la queue des x (x négatifs)
 A=1/(lambda0-lambda1)
 B=A*log(lambda1/lambda0)
@@ -365,12 +375,29 @@ proba.s = proba.s/sum(proba.s)
 barplot(proba.s)
 
 # Troncage à un score minimal
-minXk = as.numeric(x[max(which(proba.s<(probaseuilmin)))]) # On définit la classe pour proba < probaseuilmin
-names(proba.s) = as.character(x)
+minXk = as.numeric(s[max(which(proba.s<(probaseuilmin)))]) # On définit la classe pour proba < probaseuilmin
+names(proba.s) = as.character(s)
 proba.s[as.character(minXk)] = sum(proba.s[which(proba.s<probaseuilmin)]) # probabilité de la classe SCORE < minXk
-proba.s = proba.s[which(x>=minXk)] # On ne garde que les scores supérieurs à minXk
+score = s
+score=score[which(score>=minXk)]
+proba.s = proba.s[which(s>=minXk)] # On ne garde que les scores supérieurs à minXk
 subtitle = paste("lambda0=",lambda0,";lambda1=",lambda1,";E=",E,sep="")
 barplot(proba.s, col="steelblue",xlab="Score",ylab="Probabilité", main = paste("Probabilité d'apparition de chaque score\nLoi géométrique : ",subtitle,sep=""))
+print(score)
+
+min(score)
+max(score)
+mean(score)
+
+# Enregistrement du fichier
+fichier_proba = paste(workpath,"/LLR_Theorique_lambda0",gsub('\\.','',as.character(lambda0)),"_lambda1",gsub('\\.','',as.character(lambda1)),"_E",E,"_CL.txt",sep="")
+write.table(proba.s, file = fichier_proba)
+
+# Lecture fichier
+#prob.X = read.table(fichier_proba)
+
+```
+```{r}
 
 barplot(proba.s)
 ##trouver 1/lambda en fonction intervalle seq
