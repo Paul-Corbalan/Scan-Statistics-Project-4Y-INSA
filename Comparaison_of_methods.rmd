@@ -1,0 +1,49 @@
+---
+title: "Comparaison of methods"
+output: pdf_document
+---
+
+```{r}
+PoissonProcess <- function(lambda,T) {
+  return(sort(runif(rpois(1,lambda*T),0,T)))
+
+pp1=PoissonProcess(lambda0,Ti)
+print(pp1)
+plot(c(0,pp1),0:length(pp1),type="s",xlab="time t",ylab="number of events by time t")
+
+pp2=PoissonProcess(lambda1,Ti)
+print(pp2)
+plot(c(0,pp2),0:length(pp2),type="s",xlab="time t",ylab="number of events by time t")
+
+#time between events 
+n1=length(pp1)
+tbe1=pp1[2:n1]-pp1[1:n1-1]
+tbe1
+
+n2=length(pp2)
+tbe2=pp2[2:n2]-pp2[1:n2-1]
+tbe2
+
+ks.test(tbe1,pexp,lambda0, alternative="two.sided")
+
+ks.test(tbe2,pexp,lambda1, alternative="two.sided")
+```
+
+Local score
+```{r}
+lambda0 = 1
+lambda1 = 2
+library("localScore")
+E = 10
+X = floor(E*log(dexp(tbe1, rate = lambda1)/dexp(tbe1, rate = lambda0)))
+
+max_X = max(X)
+min_X = min(X)
+P_X = table(factor(X, levels = min_X:max_X))/length(X)
+
+LS=localScoreC(X)$localScore[1]
+LS
+
+result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
+result
+```
