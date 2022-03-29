@@ -3,47 +3,228 @@ title: "Comparaison of methods"
 output: pdf_document
 ---
 
+# Scan statistique - Méthode de Monte Carlo et calcul de p-value
+
+## 1. Proposition for simulations under $\mathcal{H}_1$
+
+In this part, we propose a method that simulates a Poisson process under the hypothesis $\mathcal{H}_1$. The idea is to simulate a sample under $\mathcal{H}_0$, and add randomly a subsequence under the alternative hypothesis in this sequence. 
 ```{r}
 PoissonProcess <- function(lambda,T) {
   return(sort(runif(rpois(1,lambda*T),0,T)))
+}
 
-pp1=PoissonProcess(lambda0,Ti)
+SimulationH1 <- function(lambda0, lambda1,T,tau){
+    ppH0=PoissonProcess(lambda0,T)
+    ppH1.segt=PoissonProcess(lambda1,tau)
+    dbt=runif(1,0,T-tau)
+    ppH0bis=PoissonProcess(lambda0,T)
+    ppH1.repo=dbt+ppH1.segt
+    ppH0_avant=ppH0bis[which(ppH0bis<ppH1.repo[1])]
+    ppH0_apres=ppH0bis[which(ppH0bis>ppH1.repo[length(ppH1.repo)])]
+    ppH1=c(ppH0_avant,ppH1.repo,ppH0_apres)
+    return (ppH1)
+}
+
+TimeBetweenEvent <- function(pp){
+    n=length(pp)
+    tbe=pp[2:n]-pp[1:n1-1]
+    tbe=c(0,tbe)
+    return (tbe)
+}
+
+DataFrame <- function(pp,tbe){
+    list=data.frame(ProcessusPoisson=pp, TimeBetweenEvent=tbe)
+}
+```
+
+## 2. Simulation of the sequences under $\mathcal{H}_0$ via a Monte Carlo Method
+In this part, we will try to simulate, using a Monte Carlo method, a set of $10^5$ independant samples, under the assumption that $\lambda=\lambda_0$, hence, that we are under the null hypothesis $\mathcal{H}_0$.  
+```{r}
+ScanStat <- function(pp, T, tau){
+    n=length(pp)
+    stop=n-length(which(pp>(T-tau)))
+    ScanStat=0
+    for (i in (1:stop)) {
+        x=which((pp>=pp[i])&(pp<=(pp[i]+tau)))
+        scan=length(x)
+        if (scan>ScanStat) {ScanStat=scan}
+  }   
+    return (c(i,ScanStat))
+}
+```
+
+We test the scan statistic method for different values of $\lambda_0$. The method of scan statistic we implemented will allow us to have access to the scan test statistic and where it happens in the sequence. 
+```{r}
+EmpDistrib <- function(lambda, n_sample,T,tau){
+    pp=PoissonProcess(lambda,T)
+    scan=c(ScanStat(pp,T, tau)[2])
+    index=c(ScanStat(pp,T, tau)[1])
+    for (i in 2:(n_sample)){
+        pp=PoissonProcess(lambda,T)
+        scan=rbind(scan,ScanStat(pp,T, tau)[2])
+        index=rbind(index,ScanStat(pp,T, tau)[1])
+    }
+    min_scan=min(scan)-1
+    max_scan=max(scan)
+    table1=table(factor(scan, levels = min_scan:max_scan))
+    EmpDis=data.frame(cdf=cumsum(table1)/sum(table1), proba=table1/sum(table1), index_scan=min_scan:max_scan)
+    EmpDis<-EmpDis[,-2]
+    return(EmpDis)
+    }
+```
+```{r}
+library("latex2exp")
+Plot_CDF <- function(lambda,n_sample,T,tau){
+    Emp=EmpDistrib(lambda,n_sample,T,tau)
+    title=TeX(paste(r'(Cumulative distribution function for $\lambda=$)', lambda))
+    plot(Emp$index_scan, Emp$cdf,type="s",xlab="Number of occurrences",ylab="Probability", main=title, col="red")
+    return(Emp)
+}
+```
+### 2.1 Test of $\mathcal{H}_0: \lambda=\lambda_0$ against $\mathcal{H}_0: \lambda=\lambda_1$, where $\lambda_1 > \lambda_0$ 
+In this part, we will test different values for $\lambda_0$ and $\lambda_1$, and compute the probability of occurrence of a certain scan statistic.
+
+```{r}
+#Empiricial distribution under H0
+n_sample=10**4
+lambda0=3
+T=10
+tau=1
+ppH0=PoissonProcess(lambda0,T)
+CDF=Plot_CDF(lambda0,n_sample,T,tau)
+```
+
+```{r}
+PValue <- function(Emp,ppH1, T, tau){
+    scanH1=ScanStat(ppH1,T,tau)[2]
+    index=Emp$index_scan
+    n=length(index)
+    if (scanH1< min(Emp$index_scan)){
+        return (c(scanH1,1))
+        } else{
+            if(min(Emp$index_scan)<scanH1 && scanH1<=max(Emp$index_scan)){
+                return(c(scanH1,1-Emp$cdf[scanH1-min(Emp$index_scan)+1]))
+            } else{return (c(scanH1,0))}}
+}
+```
+
+### 2.2. Simulation under $\mathcal{H}_0$ and computation of p-values
+On simule des séquences sous $\mathcal{H}_0$, que l'on stocke. On calcule la valeur de la scan stat et de la p-value, que l'on stocke aussi. On a une séquence de p-valeur des scans et une séquence de score local.
+```{r}
+NbSeqH0=5
+NbSeqH1=5
+DataH0=vector("list")
+DataH1=vector("list")
+lambda0=3
+lambda1=5
+T=10
+tau=1
+
+#Creation of a sequence that contains the sequence simulated under the null hypothesis
+for (i in 1:NbSeqH0) {
+    ppi=PoissonProcess(lambda0,T)
+    DataH0[[i]]=ppi
+}
+
+#Creation of a sequence that contains the sequence simulated under the alternative hypothesis
+for (i in 1:NbSeqH1) {
+    pphi=SimulationH1(lambda0, lambda1,T,tau)
+    DataH1[[i]]=pphi
+}
+
+#Computation of the time between events
+TimeBetweenEventList <- function(list,n_list){
+    TBE=vector("list",length=n_list)
+    for (i in (1:n_list)) {
+        ppi=list[[i]]
+        ni=length(ppi)
+        tbei=ppi[2:ni]-ppi[1:ni-1]
+        TBE[[i]]=tbei
+    }
+    return (TBE)
+}
+tbe0=TimeBetweenEventList(DataH0,NbSeqH0)
+```
+We compute the p-value associated to all 5 sequences, and stock them in a vector. 
+
+```{r}
+#We start by computing the empirical distribution for lambda0
+Emp=EmpDistrib(lambda0,n_sample,T,tau)
+scan=c()
+pvalue=c()
+
+#Then, we stock the p-value and the 
+for (i in 1:NbSeqH0){
+    ppi=DataH0[[i]]
+    result=PValue(Emp,DataH0[[i]],T,tau)
+    scan=c(scan,result[1])
+    pvalue=c(pvalue,result[2])
+    cat(paste("\nSimulation for the sequence", i, ", for lambda0=",lambda0, " ,lambda1=", lambda1, " , scan=", result[1] ,"p-value=",result[2]))
+}
+ScS_H0=data.frame(num=1:NbSeqH0, index=scan, pvalue_scan=pvalue, class=(pvalue<0.05))
+ScS_H0
+```
+## 3.Local score
+```{r}
+library("localScore")
+library(Rcpp)
+E = 10
+pvalue=c()
+
+for (i in 1:NbSeqH0){
+  X = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
+  
+  max_X = max(X)
+  min_X = min(X)
+  P_X = table(factor(X, levels = min_X:max_X))/length(X)
+  
+  LS=localScoreC(X)$localScore[1]
+  
+  result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(X), sequence_min = min_X, sequence_max =max_X)
+  
+  pvalue=c(pvalue,result)
+}
+LS_H0=data.frame(num=1:NbSeqH0, pvalue_scan=pvalue, class=(pvalue<0.05))
+LS_H0
+```
+
+## A reformater
+# distribtion des scores via MC
+# Nb seq. pp -> Nb seq. tbe -> dist. tbe (vérif) + Nb seq. Scores -> distr scores
+
+PoissonProcess <- function(lambda,T) {
+return(sort(runif(rpois(1,lambda*T),0,T)))
+}
+lambda0=2
+lambda1=3
+Ti=100000
+pp1=PoissonProcess(lambda1,Ti)
 print(pp1)
-plot(c(0,pp1),0:length(pp1),type="s",xlab="time t",ylab="number of events by time t")
-
-pp2=PoissonProcess(lambda1,Ti)
-print(pp2)
-plot(c(0,pp2),0:length(pp2),type="s",xlab="time t",ylab="number of events by time t")
-
-#time between events 
 n1=length(pp1)
 tbe1=pp1[2:n1]-pp1[1:n1-1]
 tbe1
+ks.test(tbe1,'exp',lambda)
+x=log(lambda1/lambda0)+(lambda0-lambda1)*tbe1 # ne pas mettre le floor ni le E (certes égale à 1)
+hist(x)
+summary(x)
 
-n2=length(pp2)
-tbe2=pp2[2:n2]-pp2[1:n2-1]
-tbe2
+# Calcul du maximum des scores
+E=1
+# THEO à faire !!! max.s=log(lambda1/lambda0)
+maxXk = floor(E*(log(lambda1/lambda0)))
+maxXk
+while (maxXk < 3) {
+  E = E+1
+  maxXk = floor(E*(log(lambda1/lambda0)))
+}
+E
 
-ks.test(tbe1,pexp,lambda0, alternative="two.sided")
-
-ks.test(tbe2,pexp,lambda1, alternative="two.sided")
-```
-
-Local score
-```{r}
-lambda0 = 1
-lambda1 = 2
-library("localScore")
-E = 10
-X = floor(E*log(dexp(tbe1, rate = lambda1)/dexp(tbe1, rate = lambda0)))
-
-max_X = max(X)
-min_X = min(X)
-P_X = table(factor(X, levels = min_X:max_X))/length(X)
-
-LS=localScoreC(X)$localScore[1]
-LS
-
-result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
-result
-```
+x=floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe1))
+dist.emp.scores=table(x)/sum(table(x))
+dist.emp.scores
+hist(x)
+range(x)
+x.verif=seq(range(x)[1],range(x)[2],1)
+dist.theo.scores=lambda0*exp(-lambda0*(A*x.verif-B))
+dist.theo.scores
+dist.emp.scores
