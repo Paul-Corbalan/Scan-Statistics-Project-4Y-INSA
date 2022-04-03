@@ -189,42 +189,40 @@ LS_H0
 ```
 
 ## A reformater
+```{r}
 # distribtion des scores via MC
 # Nb seq. pp -> Nb seq. tbe -> dist. tbe (vérif) + Nb seq. Scores -> distr scores
 
-PoissonProcess <- function(lambda,T) {
-return(sort(runif(rpois(1,lambda*T),0,T)))
-}
-lambda0=2
-lambda1=3
-Ti=100000
-pp1=PoissonProcess(lambda1,Ti)
-print(pp1)
-n1=length(pp1)
-tbe1=pp1[2:n1]-pp1[1:n1-1]
-tbe1
-ks.test(tbe1,'exp',lambda)
-x=log(lambda1/lambda0)+(lambda0-lambda1)*tbe1 # ne pas mettre le floor ni le E (certes égale à 1)
+A = 1/(lambda0-lambda1)
+B = A*log(lambda1/lambda0)
+
+ppH1 = PoissonProcess(lambda1,T)
+n1 = length(ppH1)
+tbe1 = ppH1[2:n1]-ppH1[1:n1-1]
+print(tbe1)
+print(ks.test(tbe1,'exp'))
+x = log(lambda1/lambda0)+(lambda0-lambda1)*tbe1 # ne pas mettre le floor ni le E (certes égale à 1)
 hist(x)
-summary(x)
+print(summary(x))
 
 # Calcul du maximum des scores
-E=1
-# THEO à faire !!! max.s=log(lambda1/lambda0)
+E = 1
+# THEO à faire !!! max.s = log(lambda1/lambda0)
 maxXk = floor(E*(log(lambda1/lambda0)))
 maxXk
 while (maxXk < 3) {
   E = E+1
   maxXk = floor(E*(log(lambda1/lambda0)))
 }
-E
+print(E)
 
-x=floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe1))
-dist.emp.scores=table(x)/sum(table(x))
+x = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe1))
+dist.emp.scores = table(x)/sum(table(x))
 dist.emp.scores
 hist(x)
-range(x)
-x.verif=seq(range(x)[1],range(x)[2],1)
-dist.theo.scores=lambda0*exp(-lambda0*(A*x.verif-B))
-dist.theo.scores
-dist.emp.scores
+print(range(x))
+x.verif = seq(range(x)[1],range(x)[2],1)
+dist.theo.scores = lambda0*exp(-lambda0*(A*x.verif-B))
+print(dist.theo.scores)
+print(dist.emp.scores)
+```
