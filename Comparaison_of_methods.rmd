@@ -22,9 +22,12 @@ SimulationH1 <- function(lambda0, lambda1,T,tau){
     ppH0_avant=ppH0bis[which(ppH0bis<ppH1.repo[1])]
     ppH0_apres=ppH0bis[which(ppH0bis>ppH1.repo[length(ppH1.repo)])]
     ppH1=c(ppH0_avant,ppH1.repo,ppH0_apres)
-    return (ppH1)
+    return (c(ppH1,which(ppH1==min(ppH1.repo))))
 }
+```
 
+
+```{r}
 TimeBetweenEvent <- function(pp){
     n=length(pp)
     tbe=pp[2:n]-pp[1:n1-1]
@@ -93,30 +96,39 @@ tau=1
 ppH0=PoissonProcess(lambda0,T)
 CDF=Plot_CDF(lambda0,n_sample,T,tau)
 ```
+```{r}
+n_sample=10**4
+lambda1=4
+T=10
+tau=1
+ppH0=PoissonProcess(lambda1,T)
+CDF=Plot_CDF(lambda1,n_sample,T,tau)
+```
 
 ```{r}
 PValue <- function(Emp,ppH1, T, tau){
     scanH1=ScanStat(ppH1,T,tau)[2]
+    index_scanH1=ScanStat(ppH1,T,tau)[1]
     index=Emp$index_scan
     n=length(index)
     if (scanH1< min(Emp$index_scan)){
-        return (c(scanH1,1))
+        return (c(scanH1,1,index_scanH1))
         } else{
             if(min(Emp$index_scan)<scanH1 && scanH1<=max(Emp$index_scan)){
-                return(c(scanH1,1-Emp$cdf[scanH1-min(Emp$index_scan)+1]))
-            } else{return (c(scanH1,0))}}
+                return(c(scanH1,1-Emp$cdf[scanH1-min(Emp$index_scan)+1],index_scanH1))
+            } else{return (c(scanH1,0,index_scanH1))}}
 }
 ```
 
 ### 2.2. Simulation under $\mathcal{H}_0$ and computation of p-values
 On simule des séquences sous $\mathcal{H}_0$, que l'on stocke. On calcule la valeur de la scan stat et de la p-value, que l'on stocke aussi. On a une séquence de p-valeur des scans et une séquence de score local.
 ```{r}
-NbSeqH0=5
-NbSeqH1=5
+NbSeqH0=5000
+NbSeqH1=NbSeqH0
 DataH0=vector("list")
 DataH1=vector("list")
 lambda0=3
-lambda1=5
+lambda1=4
 T=10
 tau=1
 
@@ -127,9 +139,11 @@ for (i in 1:NbSeqH0) {
 }
 
 #Creation of a sequence that contains the sequence simulated under the alternative hypothesis
+seqH1begin=c()
 for (i in 1:NbSeqH1) {
     pphi=SimulationH1(lambda0, lambda1,T,tau)
-    DataH1[[i]]=pphi
+    DataH1[[i]]=pphi[1]
+    seqH1begin=c(pphi[2],seqH1begin)
 }
 
 #Computation of the time between events
@@ -152,6 +166,7 @@ We compute the p-value associated to all 5 sequences, and stock them in a vector
 Emp=EmpDistrib(lambda0,n_sample,T,tau)
 scan=c()
 pvalue=c()
+index_scan=c()
 
 #Then, we stock the p-value and the 
 for (i in 1:NbSeqH0){
@@ -159,12 +174,64 @@ for (i in 1:NbSeqH0){
     result=PValue(Emp,DataH0[[i]],T,tau)
     scan=c(scan,result[1])
     pvalue=c(pvalue,result[2])
-    cat(paste("\nSimulation for the sequence", i, ", for lambda0=",lambda0, " ,lambda1=", lambda1, " , scan=", result[1] ,"p-value=",result[2]))
+    index_scan=c(index_scan,result[3])
+    #cat(paste("\nSimulation for the sequence", i, ", for lambda0=",lambda0, " ,lambda1=", lambda1, " , scan=", result[1] ,"p-value=",result[2]))
+    #print(length(ppi))
 }
-ScS_H0=data.frame(num=1:NbSeqH0, index=scan, pvalue_scan=pvalue, class=(pvalue<0.05))
-ScS_H0
+ScS_H0=data.frame(num=1:NbSeqH0, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan)
+sum(ScS_H0$class[which(ScS_H0$class==TRUE)])/NbSeqH0
 ```
-## 3.Local score
+
+```{r}
+#We start by computing the empirical distribution for lambda0
+scan=c()
+pvalue=c()
+index_scan=c()
+
+#Then, we stock the p-value and the 
+for (i in 1:NbSeqH1){
+    ppi=DataH1[[i]]
+    result=PValue(Emp,DataH1[[i]],T,tau)
+    scan=c(scan,result[1])
+    pvalue=c(pvalue,result[2])
+    index_scan=c(index_scan,result[3])
+    #cat(paste("\nSimulation for the sequence", i, ", for lambda0=",lambda0, " ,lambda1=", lambda1, " , scan=", result[1] ,"p-value=",result[2]))
+    #print(length(ppi))
+}
+ScS_H1=data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan, begin_seq_H1=seqH1begin)
+sum(ScS_H1$class[which(ScS_H0$class==TRUE)])/NbSeqH1
+ScS_H1
+```
+
+## 3. Local score
+### Distribution des scores via Monte-Carlo
+```{r}
+# Calcul du choix de E
+E = 1
+maxXk = floor(E*(log(lambda1/lambda0)))
+maxXk
+while (maxXk < 3) {
+    E = E+1
+    maxXk = floor(E*(log(lambda1/lambda0)))
+}
+print(E)
+
+ppH0 = PoissonProcess(lambda0,10^4)
+n1 = length(ppH0)
+tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
+print(ks.test(tbe0,'exp'))
+x = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe0)) # ne pas mettre le floor ni le E (certes égale à 1)
+#hist(x)
+#print(summary(x))
+
+P_X = table(factor(x, levels = min(x):max(x)))
+P_X = P_X/sum(table(x))
+
+#print(dist.theo.scores) # Mettre à jour avec Elisa
+print(P_X)
+```
+
+### Calcul du local score
 ```{r}
 library("localScore")
 library(Rcpp)
@@ -176,7 +243,7 @@ for (i in 1:NbSeqH0){
     
     max_X = max(X)
     min_X = min(X)
-    P_X = table(factor(X, levels = min_X:max_X))/length(X)
+    P_X = table(factor(X, levels = min_X:max_X))/length(X) # supprimer pour les séquences de MC
     
     LS=localScoreC(X)$localScore[1]
     
@@ -188,41 +255,3 @@ LS_H0=data.frame(num=1:NbSeqH0, pvalue_scan=pvalue, class=(pvalue<0.05))
 LS_H0
 ```
 
-## A reformater
-```{r}
-# distribtion des scores via MC
-# Nb seq. pp -> Nb seq. tbe -> dist. tbe (vérif) + Nb seq. Scores -> distr scores
-
-A = 1/(lambda0-lambda1)
-B = A*log(lambda1/lambda0)
-
-ppH1 = PoissonProcess(lambda1,T)
-n1 = length(ppH1)
-tbe1 = ppH1[2:n1]-ppH1[1:n1-1]
-print(tbe1)
-print(ks.test(tbe1,'exp'))
-x = log(lambda1/lambda0)+(lambda0-lambda1)*tbe1 # ne pas mettre le floor ni le E (certes égale à 1)
-hist(x)
-print(summary(x))
-
-# Calcul du maximum des scores
-E = 1
-# THEO à faire !!! max.s = log(lambda1/lambda0)
-maxXk = floor(E*(log(lambda1/lambda0)))
-maxXk
-while (maxXk < 3) {
-    E = E+1
-    maxXk = floor(E*(log(lambda1/lambda0)))
-}
-print(E)
-
-x = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe1))
-dist.emp.scores = table(x)/sum(table(x))
-dist.emp.scores
-hist(x)
-print(range(x))
-x.verif = seq(range(x)[1],range(x)[2],1)
-dist.theo.scores = lambda0*exp(-lambda0*(A*x.verif-B))
-print(dist.theo.scores)
-print(dist.emp.scores)
-```
