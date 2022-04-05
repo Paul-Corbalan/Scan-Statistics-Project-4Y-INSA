@@ -128,7 +128,7 @@ NbSeqH1=NbSeqH0
 DataH0=vector("list")
 DataH1=vector("list")
 lambda0=3
-lambda1=5
+lambda1=30
 T=10
 tau=1
 
@@ -209,20 +209,17 @@ ScS_H1
 # Calcul du choix de E
 E = 1
 maxXk = floor(E*(log(lambda1/lambda0)))
-maxXk
 while (maxXk < 3) {
     E = E+1
     maxXk = floor(E*(log(lambda1/lambda0)))
 }
-print(E)
 
 ppH0 = PoissonProcess(lambda0,10^4)
 n1 = length(ppH0)
 tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
-print(ks.test(tbe0,'exp'))
+print(ks.test(tbe0, 'exp'))
+
 xp = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe0)) # ne pas mettre le floor ni le E (certes égale à 1)
-#hist(x)
-#print(summary(x))
 
 min_X = min(xp)
 max_X = max(xp)
@@ -239,6 +236,42 @@ print(Mean_xp)
 #print(P_X)
 ```
 
+```{r}
+ComputeE <- function(lambda0, lambda1){
+    E = 1
+    maxXk = floor(E*(log(lambda1/lambda0)))
+    while (maxXk < 3) {
+        E = E+1
+        maxXk = floor(E*(log(lambda1/lambda0)))
+    }
+
+    return (E)
+}
+```
+
+```{r}
+ScoreDistrib <- function(lambda0, lambda1, n_sample, T){
+    E = ComputeE(lambda0, lambda1)
+
+    ppH0 = PoissonProcess(lambda0,T)
+    n1 = length(ppH0)
+    tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
+    print(ks.test(tbe0, 'exp'))
+
+    X = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe0)) # ne pas mettre le floor ni le E (certes égale à 1)
+
+    min_X = min(X)
+    max_X = max(X)
+
+    vect.score = min_X:max_X
+
+    P_X = table(factor(X, levels = min_X:max_X))
+    P_X = P_X/sum(table(X))
+
+    return (list("X" = X, "P_X" = P_X))
+}
+```
+
 ### Calcul du local score
 ```{r}
 library("localScore")
@@ -246,6 +279,13 @@ library(Rcpp)
 E = 10
 pvalue=c()
 X=c()
+
+Score = ScoreDistrib(lambda0, lambda1, n_sample, 10**4)
+xp = Score$X
+P_X = Score$P_X
+
+min_X = min(xp)
+max_X = max(xp)
 
 for (i in 1:NbSeqH0){
     x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
