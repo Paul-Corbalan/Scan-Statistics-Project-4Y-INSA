@@ -172,17 +172,17 @@ E = 10
 pvalue=c()
 
 for (i in 1:NbSeqH0){
-  X = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
-  
-  max_X = max(X)
-  min_X = min(X)
-  P_X = table(factor(X, levels = min_X:max_X))/length(X)
-  
-  LS=localScoreC(X)$localScore[1]
-  
-  result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(X), sequence_min = min_X, sequence_max =max_X)
-  
-  pvalue=c(pvalue,result)
+    X = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
+    
+    max_X = max(X)
+    min_X = min(X)
+    P_X = table(factor(X, levels = min_X:max_X))/length(X)
+    
+    LS=localScoreC(X)$localScore[1]
+    
+    result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(X), sequence_min = min_X, sequence_max =max_X)
+    
+    pvalue=c(pvalue,result)
 }
 LS_H0=data.frame(num=1:NbSeqH0, pvalue_scan=pvalue, class=(pvalue<0.05))
 LS_H0
@@ -211,8 +211,8 @@ E = 1
 maxXk = floor(E*(log(lambda1/lambda0)))
 maxXk
 while (maxXk < 3) {
-  E = E+1
-  maxXk = floor(E*(log(lambda1/lambda0)))
+    E = E+1
+    maxXk = floor(E*(log(lambda1/lambda0)))
 }
 print(E)
 
