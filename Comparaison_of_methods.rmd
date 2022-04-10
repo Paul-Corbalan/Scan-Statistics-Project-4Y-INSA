@@ -210,7 +210,7 @@ ScS_H1
 ```
 
 ## 3. Local score
-### Distribution des scores via Monte-Carlo
+### Distribution of scores via Monte Carlo
 ```{r}
 # Calcul du choix de E
 E = 1
@@ -278,7 +278,7 @@ ScoreDistrib <- function(lambda0, lambda1, T){
 }
 ```
 
-### Calcul du local score
+### Local score calculation
 ```{r}
 LocaScoreMC <- function(lambda0, lambda1, E, T){
   pvalue = c()
@@ -305,6 +305,7 @@ LocaScoreMC <- function(lambda0, lambda1, E, T){
 }
 ```
 
+### Experience plan
 ```{r}
 E = 10
 for (T in 10**(2:5)){
