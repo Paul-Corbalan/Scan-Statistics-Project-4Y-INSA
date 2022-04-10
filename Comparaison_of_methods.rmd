@@ -5,6 +5,13 @@ output: pdf_document
 
 # Scan statistique - Méthode de Monte Carlo et calcul de p-value
 
+## Import libraries
+```{r}
+library("localScore")
+library("latex2exp")
+library("Rcpp")
+```
+
 ## 1. Proposition for simulations under $\mathcal{H}_1$
 
 In this part, we propose a method that simulates a Poisson process under the hypothesis $\mathcal{H}_1$. The idea is to simulate a sample under $\mathcal{H}_0$, and add randomly a subsequence under the alternative hypothesis in this sequence. 
