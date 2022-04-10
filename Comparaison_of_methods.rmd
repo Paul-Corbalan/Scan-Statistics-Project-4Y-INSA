@@ -83,7 +83,6 @@ EmpDistrib <- function(lambda, n_sample,T,tau){
     }
 ```
 ```{r}
-library("latex2exp")
 Plot_CDF <- function(lambda,n_sample,T,tau){
     Emp=EmpDistrib(lambda,n_sample,T,tau)
     title=TeX(paste(r'(Cumulative distribution function for $\lambda=$)', lambda))
@@ -257,13 +256,13 @@ ComputeE <- function(lambda0, lambda1){
 ```
 
 ```{r}
-ScoreDistrib <- function(lambda0, lambda1, n_sample, T){
+ScoreDistrib <- function(lambda0, lambda1, T){
     E = ComputeE(lambda0, lambda1)
 
     ppH0 = PoissonProcess(lambda0,T)
     n1 = length(ppH0)
     tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
-    print(ks.test(tbe0, 'exp'))
+    # print(ks.test(tbe0, 'exp'))
 
     X = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe0)) # ne pas mettre le floor ni le E (certes égale à 1)
 
@@ -281,29 +280,43 @@ ScoreDistrib <- function(lambda0, lambda1, n_sample, T){
 
 ### Calcul du local score
 ```{r}
-library("localScore")
-library(Rcpp)
-E = 10
-pvalue=c()
-X=c()
-
-Score = ScoreDistrib(lambda0, lambda1, n_sample, 10**4)
-xp = Score$X
-P_X = Score$P_X
-
-min_X = min(xp)
-max_X = max(xp)
-
-for (i in 1:NbSeqH0){
-    x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
-    X=c(X,x)
-    LS=localScoreC(x)$localScore[1]
-    
-    result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
-    
-    pvalue = c(pvalue,result)
+LocaScoreMC <- function(lambda0, lambda1, E, T){
+  pvalue = c()
+  X = c()
+  
+  Score = ScoreDistrib(lambda0, lambda1, T)
+  xp = Score$X
+  P_X = Score$P_X
+  
+  min_X = min(xp)
+  max_X = max(xp)
+  
+  for (i in 1:NbSeqH0){
+      x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
+      X = c(X,x)
+      LS = localScoreC(x)$localScore[1]
+      
+      daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
+      
+      pvalue = c(pvalue, daudin_result)
+  }
+  LS_H0=data.frame(num=1:NbSeqH0, pvalue_scan=pvalue, class=(pvalue<0.05))
+  return(LS_H0)
 }
-LS_H0=data.frame(num=1:NbSeqH0, pvalue_scan=pvalue, class=(pvalue<0.05))
-LS_H0
 ```
 
+```{r}
+E = 10
+for (T in 10**(2:5)){
+    for (lambda0 in c(1, 2, 10)){
+        for (lambda1 in c(4, 20, 100, 1000)){
+            if (lambda0 < lambda1){
+                cat("T = ", T, ", lambda0 = ", lambda0, ", lambda1 = ", lambda1, "\n", sep = "")
+                LS_H0 = LocaScoreMC(lambda0, lambda1, E, T)
+                print(summary(LS_H0))
+                cat("---\n")
+            }
+        }
+    }
+}
+```
