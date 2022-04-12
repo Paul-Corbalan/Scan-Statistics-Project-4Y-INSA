@@ -184,8 +184,8 @@ for (i in 1:NbSeqH0){
     #cat(paste("\nSimulation for the sequence", i, ", for lambda0=",lambda0, " ,lambda1=", lambda1, " , scan=", result[1] ,"p-value=",result[2]))
     #print(length(ppi))
 }
-ScS_H0=data.frame(num=1:NbSeqH0, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan)
-sum(ScS_H0$class[which(ScS_H0$class==TRUE)])/NbSeqH0
+#ScS_H0=data.frame(num=1:NbSeqH0, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan)
+#sum(ScS_H0$class[which(ScS_H0$class==TRUE)])/NbSeqH0
 ```
 
 ```{r}
@@ -255,10 +255,19 @@ ComputeE <- function(lambda0, lambda1){
 }
 ```
 
+    for (i in 2:(n_sample)){
+        pp=PoissonProcess(lambda,T)
+        scan=rbind(scan,ScanStat(pp,T, tau)[2])
+        index=rbind(index,ScanStat(pp,T, tau)[1])
+    }
+
 ```{r}
-ScoreDistrib <- function(lambda0, lambda1, T){
+ScoreDistrib <- function(lambda0, lambda1, NbSeq, T){
     E = ComputeE(lambda0, lambda1)
 
+    for (i in 1:NbSeq) {
+       selected
+    }
     ppH0 = PoissonProcess(lambda0,T)
     n1 = length(ppH0)
     tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
@@ -280,43 +289,60 @@ ScoreDistrib <- function(lambda0, lambda1, T){
 
 ### Local score calculation
 ```{r}
-LocaScoreMC <- function(lambda0, lambda1, E, T){
+LocaScoreMC <- function(lambda0, lambda1, NbSeq, tbe0, T){
+  E = ComputeE(lambda0, lambda1)
+  
   pvalue = c()
   X = c()
   
-  Score = ScoreDistrib(lambda0, lambda1, T)
+  Score = ScoreDistrib(lambda0, lambda1, NbSeq, T)
   xp = Score$X
   P_X = Score$P_X
   
   min_X = min(xp)
   max_X = max(xp)
   
-  for (i in 1:NbSeqH0){
+  for (i in 1:NbSeq){
       x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
+      #print(range(x))
+      print(length(tbe0[[i]]))
+      if (min(x)==Inf){
+        print(tbe0[[i]])
+      }
       X = c(X,x)
       LS = localScoreC(x)$localScore[1]
       
       daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
+      options(warn = -1) # Disable warnings print
       
       pvalue = c(pvalue, daudin_result)
   }
-  LS_H0=data.frame(num=1:NbSeqH0, pvalue_scan=pvalue, class=(pvalue<0.05))
+  print(NbSeqH0)
+  LS_H0=data.frame(num=1:NbSeq, pvalue_scan=pvalue, class=(pvalue<0.05))
   return(LS_H0)
 }
 ```
 
 ### Experience plan
 ```{r}
-E = 10
-for (T in 10**(2:5)){
-    for (lambda0 in c(1, 2, 10)){
-        for (lambda1 in c(4, 20, 100, 1000)){
-            if (lambda0 < lambda1){
-                cat("T = ", T, ", lambda0 = ", lambda0, ", lambda1 = ", lambda1, "\n", sep = "")
-                LS_H0 = LocaScoreMC(lambda0, lambda1, E, T)
-                print(summary(LS_H0))
-                cat("---\n")
+NbSeq = 10**3
+for (lambda0 in (1:5)){
+    for (lambda1 in c(2,4,6)){
+        if (lambda0 < lambda1){
+            cat("Nb = ", NbSeq, ", lambda0 = ", lambda0, ", lambda1 = ", lambda1, "\n", sep = "")
+          
+            tbe0=vector("list",length=NbSeq)
+            for (i in (1:NbSeq)) {
+                ppi = PoissonProcess(lambda0,T)
+                ni=length(ppi)
+                tbei=ppi[2:ni]-ppi[1:ni-1]
+                tbe0[[i]]=tbei
             }
+            
+            LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, tbe0, T)
+            
+            print(summary(LS_H0))
+            cat("---\n")
         }
     }
 }
