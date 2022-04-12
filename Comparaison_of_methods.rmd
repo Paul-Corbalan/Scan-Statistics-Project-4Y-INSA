@@ -288,7 +288,7 @@ ScoreDistribElisa <- function(lambda0, lambda1, T){
 
 ### Local score calculation
 ```{r}
-LocaScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
+LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
   E = ComputeE(lambda0, lambda1)
   
   pvalue = c()
@@ -338,7 +338,7 @@ for (lambda0 in (2:5)){
             X_seq = Score$Score_X
             P_X = Score$P_X
             
-            LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+            LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
             SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
             
             cat("Local Score:\n")
@@ -353,7 +353,7 @@ for (lambda0 in (2:5)){
             X_seq = Score$Score_X
             P_X = Score$P_X
             
-            LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+            LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
             SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
             
             cat("Local Score:\n")
