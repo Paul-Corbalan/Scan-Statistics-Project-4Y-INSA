@@ -301,7 +301,7 @@ T = 10
 for (lambda0 in (2:5)){
     for (lambda1 in c(2,4,6)){
         if (lambda0 < lambda1){
-            cat("Nb = ", NbSeq, ", lambda0 = ", lambda0, ", lambda1 = ", lambda1, "\n", sep = "")
+            cat("For T = ", T, ", Nb = ", NbSeq, "lambda0 = ", lambda0, "and lambda1 = ", lambda1, ":\n", sep = "")
           
             tbe0=vector("list",length=NbSeq)
             for (i in (1:NbSeq)) {
@@ -311,6 +311,7 @@ for (lambda0 in (2:5)){
                 tbe0[[i]]=tbei
             }
             
+            cat("- Empiric version:\n")
             Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
             X_seq = Score$Score_X
             P_X = Score$P_X
@@ -318,8 +319,8 @@ for (lambda0 in (2:5)){
             LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
             
             print(summary(LS_H0))
-            cat("-\n")
             
+            cat("- Elisa version:\n")
             Score = ScoreDistribElisa(lambda0, lambda1, T)
             X_seq = Score$Score_X
             P_X = Score$P_X
