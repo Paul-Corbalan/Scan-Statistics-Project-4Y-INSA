@@ -337,8 +337,8 @@ p
 # Vérification de la distribution theorique des scores
 T=10
 E=1
-lambda0
-lambda1
+lambda0=2
+lambda1=3
 
 ## Choix du E 
 maxXk = floor(E*(log(lambda1/lambda0)))
@@ -355,6 +355,7 @@ score_max
 ## Calcul score_min 
 score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
 
+## Calcul distrib score
 l=seq(score_min_c,score_max,1)
 borne_inf=(l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
 borne_sup=(l+1-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
