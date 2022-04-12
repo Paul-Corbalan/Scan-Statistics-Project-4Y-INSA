@@ -169,23 +169,22 @@ We compute the p-value associated to all 5 sequences, and stock them in a vector
 
 ```{r}
 #We start by computing the empirical distribution for lambda0
-Emp=EmpDistrib(lambda0,n_sample,T,tau)
-
-pvalue=c()
-index_scan=c()
+Emp = EmpDistrib(lambda0,n_sample,T,tau)
+scan = c()
+pvalue = c()
+index_scan = c()
 
 #Then, we stock the p-value and the 
 for (i in 1:NbSeqH0){
-    ppi=DataH0[[i]]
-    result=PValue(Emp,DataH0[[i]],T,tau)
-    scan=c(scan,result[1])
-    pvalue=c(pvalue,result[2])
-    index_scan=c(index_scan,result[3])
-    #cat(paste("\nSimulation for the sequence", i, ", for lambda0=",lambda0, " ,lambda1=", lambda1, " , scan=", result[1] ,"p-value=",result[2]))
-    #print(length(ppi))
+    ppi = DataH0[[i]]
+    result = PValue(Emp,ppi,T,tau)
+    scan = c(scan,result[1])
+    pvalue = c(pvalue,result[2])
+    index_scan = c(index_scan,result[3])
 }
-#ScS_H0=data.frame(num=1:NbSeqH0, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan)
-#sum(ScS_H0$class[which(ScS_H0$class==TRUE)])/NbSeqH0
+
+ScS_H0=data.frame(num=(1:NbSeqH0), scan_stat=scan, pvalue_scan=pvalue,class=c(pvalue<0.05)) 
+sum(ScS_H0$class[which(ScS_H0$class==TRUE)])/NbSeqH0
 ```
 
 ```{r}
@@ -207,6 +206,25 @@ for (i in 1:NbSeqH1){
 ScS_H1=data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan, begin_seq_H1=seqH1begin)
 sum(ScS_H1$class[which(ScS_H0$class==TRUE)])/NbSeqH1
 ScS_H1
+```
+
+```{r}
+ScanStatMC <- function(NbSeq, T, tau, Emp, pp0){
+    scan=c()
+    pvalue=c()
+    index_scan=c()
+
+    for (i in 1:NbSeq){
+        ppi=pp0[[i]]
+        result=PValue(Emp,ppi,T,tau)
+        scan=c(scan,result[1])
+        pvalue=c(pvalue,result[2])
+        index_scan=c(index_scan,result[3])
+    }
+
+    ScS_H0=data.frame(num=(1:NbSeq), scan_stat=scan, pvalue_scan=pvalue,class=c(pvalue<0.05))
+    return(ScS_H0)
+}
 ```
 
 ## 3. Local score
@@ -294,7 +312,7 @@ LocaScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 }
 ```
 
-### Experience plan
+## 4. Experience plan for comparaison
 ```{r}
 NbSeq = 10**3
 T = 10
@@ -304,30 +322,44 @@ for (lambda0 in (2:5)){
             cat("For T = ", T, ", Nb = ", NbSeq, "lambda0 = ", lambda0, "and lambda1 = ", lambda1, ":\n", sep = "")
           
             tbe0=vector("list",length=NbSeq)
+            pp0 =  vector("list", length = NbSeq)
             for (i in (1:NbSeq)) {
                 ppi = PoissonProcess(lambda0,T)
                 ni=length(ppi)
+                pp0[[i]] = ppi
                 tbei=ppi[2:ni]-ppi[1:ni-1]
                 tbe0[[i]]=tbei
             }
             
             cat("- Empiric version:\n")
             Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
+            Emp = EmpDistrib(lambda0,n_sample,T,tau)
+
             X_seq = Score$Score_X
             P_X = Score$P_X
             
             LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+            SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
             
+            cat("Local Score:\n")
             print(summary(LS_H0))
+            cat("Scan Statistics:\n")
+            print(summary(SS_H0))
             
             cat("- Elisa version:\n")
             Score = ScoreDistribElisa(lambda0, lambda1, T)
+            Emp = EmpDistrib(lambda0,n_sample,T,tau)
+
             X_seq = Score$Score_X
             P_X = Score$P_X
             
             LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+            SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
             
+            cat("Local Score:\n")
             print(summary(LS_H0))
+            cat("Scan Statistics:\n")
+            print(summary(SS_H0))
             cat("---\n")
         }
     }
