@@ -227,7 +227,7 @@ ComputeE <- function(lambda0, lambda1){
 ```{r}
 ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
     E = ComputeE(lambda0, lambda1)
-    Score=c()
+    Score = c()
     
     for (i in 1:n_sample){
         ppH0 = PoissonProcess(lambda0,T)
@@ -248,22 +248,23 @@ ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
 ```
 
 ```{r}
-ScoreDistribElisa <- function(lambda0, lambda1, NbSeq, T){
+ScoreDistribElisa <- function(lambda0, lambda1, T){
     E = ComputeE(lambda0, lambda1)
 
-    score_max=floor(E*log(lambda1/lambda0))
+    score_max = floor(E*log(lambda1/lambda0))
 
     ## score_min compute
-    score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
+    score_min_c = floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
 
-    l=seq(score_min_c,score_max,1)
-    borne_inf=(l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
-    borne_sup=(l+1-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
-    proba.l=pexp(rate=lambda0,borne_inf)-pexp(rate=lambda0,borne_sup)
-    S=sum(proba.l)
-    new.proba.s=proba.l/S
+    l = seq(score_min_c,score_max,1)
+    borne_inf = (l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+    borne_sup = (l+1-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+    proba.l = pexp(rate=lambda0,borne_inf)-pexp(rate=lambda0,borne_sup)
+    S = sum(proba.l)
+    new.proba.s = proba.l/S
+    df = data.frame("Score_X" = l, "P_X" = new.proba.s)
 
-    return (list("X" = l, "P_X" = new.proba.s))
+    return (df)
 }
 ```
 
@@ -319,8 +320,8 @@ for (lambda0 in (2:5)){
             print(summary(LS_H0))
             cat("-\n")
             
-            Score = ScoreDistribElisa(lambda0, lambda1, NbSeq, T)
-            X_seq = Score$X
+            Score = ScoreDistribElisa(lambda0, lambda1, T)
+            X_seq = Score$Score_X
             P_X = Score$P_X
             
             LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
