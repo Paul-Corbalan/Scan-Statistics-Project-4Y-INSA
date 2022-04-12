@@ -212,37 +212,6 @@ ScS_H1
 ## 3. Local score
 ### Distribution of scores via Monte Carlo
 ```{r}
-# Calcul du choix de E
-E = 1
-maxXk = floor(E*(log(lambda1/lambda0)))
-while (maxXk < 3) {
-    E = E+1
-    maxXk = floor(E*(log(lambda1/lambda0)))
-}
-
-ppH0 = PoissonProcess(lambda0,10^4)
-n1 = length(ppH0)
-tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
-print(ks.test(tbe0, 'exp'))
-
-xp = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe0)) # ne pas mettre le floor ni le E (certes égale à 1)
-
-min_X = min(xp)
-max_X = max(xp)
-
-vect.score = min_X:max_X
-
-P_X = table(factor(xp, levels = min(xp):max(xp)))
-P_X = P_X/sum(table(xp))
-
-Mean_xp = sum(vect.score*P_X)
-print(Mean_xp)
-
-#print(dist.theo.scores) # Mettre à jour avec Elisa
-#print(P_X)
-```
-
-```{r}
 ComputeE <- function(lambda0, lambda1){
     E = 1
     maxXk = floor(E*(log(lambda1/lambda0)))
@@ -256,28 +225,26 @@ ComputeE <- function(lambda0, lambda1){
 ```
 
 ```{r}
-ScoreDistrib <- function(lambda0, lambda1, NbSeq, T){
+ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
     E = ComputeE(lambda0, lambda1)
-
-    for (i in 1:NbSeq) {
-       selected
+    Score=c()
+    
+    for (i in 1:n_sample){
+        ppH0 = PoissonProcess(lambda0,T)
+        n1 = length(ppH0)
+        tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
+        X = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe0))
+        Score=c(Score,X)
     }
-    ppH0 = PoissonProcess(lambda0,T)
-    n1 = length(ppH0)
-    tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
-    # print(ks.test(tbe0, 'exp'))
+    min_X = min(Score)
+    max_X = max(Score)
 
-    X = floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe0)) # ne pas mettre le floor ni le E (certes égale à 1)
+    P_X = table(factor(Score, levels = min_X:max_X))/sum(table(Score)).Freq
+    df = data.frame("Score_X" = min(Score):max(Score), "P_X" = P_X)
+    df <- df[,-2]
 
-    min_X = min(X)
-    max_X = max(X)
-
-    vect.score = min_X:max_X
-
-    P_X = table(factor(X, levels = min_X:max_X))
-    P_X = P_X/sum(table(X))
-
-    return (list("X" = X, "P_X" = P_X))
+    return (df)
+}
 ```
 
 ```{r}
@@ -321,7 +288,6 @@ LocaScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
       
       pvalue = c(pvalue, daudin_result)
   }
-  print(NbSeqH0)
   LS_H0=data.frame(num=1:NbSeq, pvalue_scan=pvalue, class=(pvalue<0.05))
   return(LS_H0)
 }
@@ -331,7 +297,7 @@ LocaScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 ```{r}
 NbSeq = 10**3
 T = 10
-for (lambda0 in (1:5)){
+for (lambda0 in (2:5)){
     for (lambda1 in c(2,4,6)){
         if (lambda0 < lambda1){
             cat("Nb = ", NbSeq, ", lambda0 = ", lambda0, ", lambda1 = ", lambda1, "\n", sep = "")
@@ -344,7 +310,16 @@ for (lambda0 in (1:5)){
                 tbe0[[i]]=tbei
             }
             
-            Score = ScoreDistrib(lambda0, lambda1, NbSeq, T)
+            Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
+            X_seq = Score$Score_X
+            P_X = Score$P_X
+            
+            LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+            
+            print(summary(LS_H0))
+            cat("-\n")
+            
+            Score = ScoreDistribElisa(lambda0, lambda1, NbSeq, T)
             X_seq = Score$X
             P_X = Score$P_X
             
