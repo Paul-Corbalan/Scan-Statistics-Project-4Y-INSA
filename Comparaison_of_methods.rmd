@@ -239,7 +239,7 @@ ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
     min_X = min(Score)
     max_X = max(Score)
 
-    P_X = table(factor(Score, levels = min_X:max_X))/sum(table(Score)).Freq
+    P_X = table(factor(Score, levels = min_X:max_X))/sum(table(Score))
     df = data.frame("Score_X" = min(Score):max(Score), "P_X" = P_X)
     df <- df[,-2]
 
