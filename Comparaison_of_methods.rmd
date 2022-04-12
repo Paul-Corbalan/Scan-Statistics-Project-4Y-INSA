@@ -255,12 +255,6 @@ ComputeE <- function(lambda0, lambda1){
 }
 ```
 
-    for (i in 2:(n_sample)){
-        pp=PoissonProcess(lambda,T)
-        scan=rbind(scan,ScanStat(pp,T, tau)[2])
-        index=rbind(index,ScanStat(pp,T, tau)[1])
-    }
-
 ```{r}
 ScoreDistrib <- function(lambda0, lambda1, NbSeq, T){
     E = ComputeE(lambda0, lambda1)
