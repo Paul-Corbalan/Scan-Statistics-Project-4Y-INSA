@@ -295,9 +295,19 @@ LocaScoreMC <- function(lambda0, lambda1, NbSeq, tbe0, T){
   pvalue = c()
   X = c()
   
-  Score = ScoreDistrib(lambda0, lambda1, NbSeq, T)
-  xp = Score$X
-  P_X = Score$P_X
+score_max=floor(E*log(lambda1/lambda0))
+
+## Calcul score_min 
+score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
+
+  l=seq(score_min_c,score_max,1)
+  borne_inf=(l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+  borne_sup=(l+1-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+  proba.l=pexp(rate=lambda0,borne_inf)-pexp(rate=lambda0,borne_sup)
+  S=sum(proba.l)
+  new.proba.s=proba.l/S
+  xp = l
+  P_X = proba.l/S
   
   min_X = min(xp)
   max_X = max(xp)
