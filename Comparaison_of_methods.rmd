@@ -283,36 +283,17 @@ ScoreDistrib <- function(lambda0, lambda1, NbSeq, T){
 
 ### Local score calculation
 ```{r}
-LocaScoreMC <- function(lambda0, lambda1, NbSeq, tbe0, T){
+LocaScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
   E = ComputeE(lambda0, lambda1)
   
   pvalue = c()
   X = c()
   
-score_max=floor(E*log(lambda1/lambda0))
-
-## Calcul score_min 
-score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
-
-  l=seq(score_min_c,score_max,1)
-  borne_inf=(l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
-  borne_sup=(l+1-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
-  proba.l=pexp(rate=lambda0,borne_inf)-pexp(rate=lambda0,borne_sup)
-  S=sum(proba.l)
-  new.proba.s=proba.l/S
-  xp = l
-  P_X = proba.l/S
-  
-  min_X = min(xp)
-  max_X = max(xp)
+  min_X = min(X_seq)
+  max_X = max(X_seq)
   
   for (i in 1:NbSeq){
       x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
-      #print(range(x))
-      print(length(tbe0[[i]]))
-      if (min(x)==Inf){
-        print(tbe0[[i]])
-      }
       X = c(X,x)
       LS = localScoreC(x)$localScore[1]
       
@@ -330,6 +311,7 @@ score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
 ### Experience plan
 ```{r}
 NbSeq = 10**3
+T = 10
 for (lambda0 in (1:5)){
     for (lambda1 in c(2,4,6)){
         if (lambda0 < lambda1){
@@ -343,7 +325,11 @@ for (lambda0 in (1:5)){
                 tbe0[[i]]=tbei
             }
             
-            LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, tbe0, T)
+            Score = ScoreDistrib(lambda0, lambda1, NbSeq, T)
+            X_seq = Score$X
+            P_X = Score$P_X
+            
+            LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
             
             print(summary(LS_H0))
             cat("---\n")
