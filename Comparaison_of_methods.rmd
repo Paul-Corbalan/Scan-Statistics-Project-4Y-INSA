@@ -299,13 +299,16 @@ LocaScoreMC <- function(lambda0, lambda1, NbSeq, tbe0, T){
   xp = Score$X
   P_X = Score$P_X
   
-  NbSeqH0 = length(tbe0)
-  
   min_X = min(xp)
   max_X = max(xp)
   
   for (i in 1:NbSeq){
       x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
+      #print(range(x))
+      print(length(tbe0[[i]]))
+      if (min(x)==Inf){
+        print(tbe0[[i]])
+      }
       X = c(X,x)
       LS = localScoreC(x)$localScore[1]
       
@@ -328,9 +331,13 @@ for (lambda0 in (1:5)){
         if (lambda0 < lambda1){
             cat("Nb = ", NbSeq, ", lambda0 = ", lambda0, ", lambda1 = ", lambda1, "\n", sep = "")
           
-            ppH0 = PoissonProcess(lambda0,T)
-            n1 = length(ppH0)
-            tbe0 = ppH0[2:n1]-ppH0[1:n1-1]
+            tbe0=vector("list",length=NbSeq)
+            for (i in (1:NbSeq)) {
+                ppi = PoissonProcess(lambda0,T)
+                ni=length(ppi)
+                tbei=ppi[2:ni]-ppi[1:ni-1]
+                tbe0[[i]]=tbei
+            }
             
             LS_H0 = LocaScoreMC(lambda0, lambda1, NbSeq, tbe0, T)
             
