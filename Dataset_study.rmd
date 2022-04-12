@@ -361,7 +361,7 @@ max
 #0)>=max)<10^-9 
 t=seq(0,max,0.1)
 probaseuilmin = 10^-9
-x=floor(E*log(lambda1/lambda0)+(lambda0-lambda1)*t)
+x=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*t)
 head(x)
 range(x)
 
@@ -371,8 +371,14 @@ s
 ##tronquer la queue des x (x négatifs)
 A=1/(lambda0-lambda1)
 B=A*log(lambda1/lambda0)
-proba.s=lambda0*exp(-lambda0*(A*s-B))
-proba.s = proba.s/sum(proba.s)
+proba.s=(lambda1/lambda0)*(exp(lambda0/(lambda0-lambda1)*(1-t/E))*exp(-lambda0/(E*lambda0-lambda1))-1)
+
+score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*max)
+
+somme=(lambda1/lambda0)*(exp(-lambda0/(E*(lambda0-lambda1))-1))* exp(lambda0/(lambda0-lambda1))*exp(lambda0/(E*(lambda0-lambda1))*(1-score_min_c))/(1-exp(lambda0/(E*(lambda0-lambda1))))
+
+#proba.s = proba.s/sum(proba.s)
+proba.s= proba.s/(1-somme)
 proba.s
 barplot(proba.s)
 
