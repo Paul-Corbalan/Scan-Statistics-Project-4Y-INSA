@@ -334,6 +334,41 @@ p
 
 ```
 ```{r}
+# Vérification de la distribution theorique des scores
+T=10
+E=1
+lambda0
+lambda1
+
+## Choix du E 
+maxXk = floor(E*(log(lambda1/lambda0)))
+while (maxXk < 3) {
+  E = E+1
+  maxXk = floor(E*(log(lambda1/lambda0)))
+}
+E
+
+## Calcul score max 
+score_max=floor(E*log(lambda1/lambda0))
+score_max
+
+## Calcul score_min 
+score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
+
+l=seq(score_min_c,score_max,1)
+borne_inf=(l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+borne_sup=(l+1-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+proba.l=pexp(rate=lambda0,borne_inf)-pexp(rate=lambda0,borne_sup)
+proba.l
+S=sum(proba.l)
+new.proba.s=proba.l/S
+new.proba.s
+barplot(new.proba.s)
+
+
+```
+
+```{r}
 
 library(stringr)
 
@@ -348,34 +383,44 @@ workpath = "."
 
 
 E=1
-lambda0=5
-lambda1=0.1
-max=0 
+lambda0=2
+lambda1=3
 
-while (exp(-lambda0*max) > 10^(-9)){
-  max = max + 1 
-}
-max
 
  # en fonction de lambda0 tq P(Expo(lambda
 #0)>=max)<10^-9 
-t=seq(0,max,0.1)
 probaseuilmin = 10^-9
-x=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*t)
-head(x)
-range(x)
+
+# Vérification de la distribution theorique des scores
+E=1
+lambda0
+lambda1
+maxXk = floor(E*(log(lambda1/lambda0)))
+while (maxXk < 3) {
+  E = E+1
+  maxXk = floor(E*(log(lambda1/lambda0)))
+}
+E
+score_max=floor(E*log(lambda1/lambda0))
+score_max
+l=-50
+borne_inf=(l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+borne_sup=(l+1-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
+pexp(rate=lambda0,borne_inf)-pexp(rate=lambda0,borne_sup)
+
+l=seq(-100,score_max,1)
+x=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*l)
+proba.s=(lambda1/lambda0)*(exp(lambda0/(lambda0-lambda1)*(1-l/E))*exp(-lambda0/(E*lambda0-lambda1))-1)
+cbind(x,proba.s)
+tail(proba.s)
+boxplot(proba.s)
+sum(proba.s)
 
 
-s=seq(min(x),max(x),0.1)
-s
-##tronquer la queue des x (x négatifs)
-A=1/(lambda0-lambda1)
-B=A*log(lambda1/lambda0)
-proba.s=(lambda1/lambda0)*(exp(lambda0/(lambda0-lambda1)*(1-t/E))*exp(-lambda0/(E*lambda0-lambda1))-1)
 
 score_min_c=floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*max)
 
-somme=(lambda1/lambda0)*(exp(-lambda0/(E*(lambda0-lambda1))-1))* exp(lambda0/(lambda0-lambda1))*exp(lambda0/(E*(lambda0-lambda1))*(1-score_min_c))/(1-exp(lambda0/(E*(lambda0-lambda1))))
+somme=(lambda1/lambda0)*(exp(-lambda0/(E*(lambda0-lambda1)))-1)* exp(lambda0/(lambda0-lambda1))*exp(lambda0/(E*(lambda0-lambda1))*(1-score_min_c))/(1-exp(lambda0/(E*(lambda0-lambda1))))
 
 #proba.s = proba.s/sum(proba.s)
 proba.s= proba.s/(1-somme)
@@ -422,6 +467,46 @@ write.table(proba.s, file = fichier_proba)
 #prob.X = read.table(fichier_proba)
 
 ```
+```{r}
+PoissonProcess <- function(lambda,T) {
+return(sort(runif(rpois(1,lambda*T),0,T)))
+}
+lambda0=2
+lambda1=3
+Ti=100000
+pp1=PoissonProcess(lambda1,Ti)
+print(pp1)
+n1=length(pp1)
+tbe1=pp1[2:n1]-pp1[1:n1-1]
+tbe1
+ks.test(tbe1,'exp')
+x=log(lambda1/lambda0)+(lambda0-lambda1)*tbe1 # ne pas mettre le floor ni le E (certes égale à 1)
+hist(x)
+summary(x)
+
+# Calcul du maximum des scores
+E=1
+# THEO à faire !!! max.s=log(lambda1/lambda0)
+maxXk = floor(E*(log(lambda1/lambda0)))
+maxXk
+while (maxXk < 3) {
+  E = E+1
+  maxXk = floor(E*(log(lambda1/lambda0)))
+}
+E
+
+x=floor(E*(log(lambda1/lambda0)+(lambda0-lambda1)*tbe1))
+dist.emp.scores=table(x)/sum(table(x))
+dist.emp.scores
+hist(x)
+range(x)
+x.verif=seq(range(x)[1],range(x)[2],1)
+#dist.theo.scores=lambda0*exp(-lambda0*(A*x.verif-B))
+#dist.theo.scores
+dist.emp.scores
+
+```
+
 ```{r}
 
 barplot(proba.s)
