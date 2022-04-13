@@ -365,3 +365,9 @@ for (lambda0 in (2:5)){
     }
 }
 ```
+
+Test `confusionMatrix`
+```{r}
+library(caret)
+confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))
+```
