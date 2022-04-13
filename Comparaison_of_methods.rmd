@@ -10,6 +10,7 @@ output: pdf_document
 library("localScore")
 library("latex2exp")
 library("Rcpp")
+library("caret")
 ```
 
 ## 1. Proposition for simulations under $\mathcal{H}_1$
@@ -345,6 +346,8 @@ for (lambda0 in (2:5)){
             print(summary(LS_H0))
             cat("Scan Statistics:\n")
             print(summary(SS_H0))
+            cat("Confusion Matrix:\n")
+            print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
             
             cat("- Elisa version:\n")
             Score = ScoreDistribElisa(lambda0, lambda1, T)
@@ -360,14 +363,10 @@ for (lambda0 in (2:5)){
             print(summary(LS_H0))
             cat("Scan Statistics:\n")
             print(summary(SS_H0))
+            cat("Confusion Matrix:\n")
+            print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
             cat("---\n")
         }
     }
 }
-```
-
-Test `confusionMatrix`
-```{r}
-library(caret)
-confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))
 ```
