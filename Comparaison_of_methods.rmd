@@ -30,7 +30,7 @@ SimulationH1 <- function(lambda0, lambda1,T,tau){
     ppH0_avant=ppH0bis[which(ppH0bis<ppH1.repo[1])]
     ppH0_apres=ppH0bis[which(ppH0bis>ppH1.repo[length(ppH1.repo)])]
     ppH1=c(ppH0_avant,ppH1.repo,ppH0_apres)
-    return (c(ppH1,which(ppH1==min(ppH1.repo))))
+    return (ppH1)
 }
 ```
 
@@ -130,12 +130,12 @@ PValue <- function(Emp,ppH1, T, tau){
 ### 2.2. Simulation under $\mathcal{H}_0$ and computation of p-values
 On simule des séquences sous $\mathcal{H}_0$, que l'on stocke. On calcule la valeur de la scan stat et de la p-value, que l'on stocke aussi. On a une séquence de p-valeur des scans et une séquence de score local.
 ```{r}
-NbSeqH0=1000
+NbSeqH0=10000
 NbSeqH1=NbSeqH0
 DataH0=vector("list")
 DataH1=vector("list")
-lambda0=3
-lambda1=30
+lambda0=4
+lambda1=10
 T=10
 tau=1
 
@@ -149,8 +149,7 @@ for (i in 1:NbSeqH0) {
 seqH1begin=c()
 for (i in 1:NbSeqH1) {
     pphi=SimulationH1(lambda0, lambda1,T,tau)
-    DataH1[[i]]=pphi[1]
-    seqH1begin=c(pphi[2],seqH1begin)
+    DataH1[[i]]=pphi
 }
 
 #Computation of the time between events
@@ -201,12 +200,10 @@ for (i in 1:NbSeqH1){
     scan=c(scan,result[1])
     pvalue=c(pvalue,result[2])
     index_scan=c(index_scan,result[3])
-    #cat(paste("\nSimulation for the sequence", i, ", for lambda0=",lambda0, " ,lambda1=", lambda1, " , scan=", result[1] ,"p-value=",result[2]))
-    #print(length(ppi))
 }
-ScS_H1=data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan, begin_seq_H1=seqH1begin)
-sum(ScS_H1$class[which(ScS_H0$class==TRUE)])/NbSeqH1
-ScS_H1
+ScS_H1=data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan)
+sum(ScS_H1$class[which(ScS_H1$class==TRUE)])/NbSeqH1
+
 ```
 
 ```{r}
@@ -339,55 +336,73 @@ LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 NbSeq = 10**3
 T = 10
 for (lambda0 in (2:5)){
-    for (lambda1 in c(2,4,6)){
-        if (lambda0 < lambda1){
-            cat("For T = ", T, ", Nb = ", NbSeq, "lambda0 = ", lambda0, "and lambda1 = ", lambda1, ":\n", sep = "")
-          
-            tbe0=vector("list",length=NbSeq)
-            pp0 =  vector("list", length = NbSeq)
-            for (i in (1:NbSeq)) {
-                ppi = PoissonProcess(lambda0,T)
-                ni=length(ppi)
-                pp0[[i]] = ppi
-                tbei=ppi[2:ni]-ppi[1:ni-1]
-                tbe0[[i]]=tbei
-            }
-            
-            cat("- Empiric version:\n")
-            Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
-            Emp = EmpDistrib(lambda0,n_sample,T,tau)
+  Sensitivity = c()
+  Specificity = c()
+  accepted_lambda = c()
 
-            X_seq = Score$Score_X
-            P_X = Score$P_X
-            
-            LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-            SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-            
-            cat("Local Score:\n")
-            print(summary(LS_H0))
-            cat("Scan Statistics:\n")
-            print(summary(SS_H0))
-            cat("Confusion Matrix:\n")
-            print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
-            
-            cat("- Elisa version:\n")
-            Score = ScoreDistribElisa(lambda0, lambda1, T)
-            Emp = EmpDistrib(lambda0,n_sample,T,tau)
-
-            X_seq = Score$Score_X
-            P_X = Score$P_X
-            
-            LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-            SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-            
-            cat("Local Score:\n")
-            print(summary(LS_H0))
-            cat("Scan Statistics:\n")
-            print(summary(SS_H0))
-            cat("Confusion Matrix:\n")
-            print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
-            cat("---\n")
+  for (lambda1 in c(3:8)){
+    if (lambda0 < lambda1){
+      accepted_lambda=c(accepted_lambda,lambda1)
+      cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
+      tbe0=vector("list",length=NbSeq)
+      pp0 =  vector("list", length = NbSeq)
+      for (i in (1:NbSeq)) {
+        ppi = PoissonProcess(lambda0,T)
+        ni=length(ppi)
+        pp0[[i]] = ppi
+        tbei=ppi[2:ni]-ppi[1:ni-1]
+        tbe0[[i]]=tbei
         }
+            
+      #cat("- Empiric version:\n")
+      Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
+      Emp = EmpDistrib(lambda0,n_sample,T,tau)
+      
+      X_seq = Score$Score_X
+      P_X = Score$P_X
+      
+      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+      options(warn = -1) # Disable warnings print
+      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
+            
+      #cat("Local Score:\n")
+      #print(summary(LS_H0))
+      #cat("Scan Statistics:\n")
+      #print(summary(SS_H0))
+      #cat("Confusion Matrix:\n")
+      #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
+        
+      #cat("- Elisa version:\n")
+      Score = ScoreDistribElisa(lambda0, lambda1, T)
+      Emp = EmpDistrib(lambda0,n_sample,T,tau)
+
+      X_seq = Score$Score_X
+      P_X = Score$P_X
+            
+      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+      options(warn = -1) # Disable warnings print
+
+      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
+        
+      #cat("Local Score:\n")
+      #print(summary(LS_H0))
+      #cat("Scan Statistics:\n")
+      #print(summary(SS_H0))
+      #cat("Confusion Matrix:\n")
+      print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))$table)
+      Sensitivity = c(Sensitivity,confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))$byClass[1])
+      Specificity = c(Specificity,confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))$byClass[2])
+
+      cat("---\n")
+      
     }
+  }
+  titleSens=TeX(paste(r'(Sensitivity for $\lambda_0=$)', lambda0))
+  plot(x=accepted_lambda,y=Sensitivity, type='l', main = titleSens)
+  
+  titleSpec=TeX(paste(r'(Specificity for $\lambda_0=$)', lambda0))
+  plot(x=accepted_lambda,y=Specificity, type='l', main = titleSpec)
+
 }
 ```
+
