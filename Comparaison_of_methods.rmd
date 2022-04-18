@@ -287,6 +287,27 @@ ScoreDistribElisa <- function(lambda0, lambda1, T){
 }
 ```
 
+```{r}
+distrib_score_mc=ScoreDistribEmpiric(2,3,10000,T)
+
+distrib_score_theo=ScoreDistribElisa(2,3,T)
+
+
+length(distrib_score_mc[,2])
+length(distrib_score_theo[,2])
+
+#diff_distrib_score=abs(distrib_score_mc[,2]-distrib_score_theo[,2])
+
+#par(mfrow = c(1,2))
+barplot(distrib_score_mc[,2],col="blue",axes=F)
+mtext("Distribution des scores via Monte_Carlo",side=1,line=2.5,col="blue")
+axis(2, ylim=c(0,10))
+par(new = T)
+barplot(distrib_score_theo[,2],col="red",axes=F)
+mtext("Distribution des scores via la méthode théorique",side=1,line=4,col="red") 
+```
+
+
 ### Local score calculation
 ```{r}
 LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
