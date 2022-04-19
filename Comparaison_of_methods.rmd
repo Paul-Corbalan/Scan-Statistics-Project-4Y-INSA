@@ -16,11 +16,15 @@ library("caret")
 ## 1. Proposition for simulations under $\mathcal{H}_1$
 
 In this part, we propose a method that simulates a Poisson process under the hypothesis $\mathcal{H}_1$. The idea is to simulate a sample under $\mathcal{H}_0$, and add randomly a subsequence under the alternative hypothesis in this sequence. 
+The function `PoissonProcess` creates a sequence of Poisson process of a parameter lambda
 ```{r}
 PoissonProcess <- function(lambda,T) {
   return(sort(runif(rpois(1,lambda*T),0,T)))
 }
+```
 
+The following function creates a sequence under H0 and add a sequence under H1.
+```{r}
 SimulationH1 <- function(lambda0, lambda1,T,tau){
     ppH0=PoissonProcess(lambda0,T)
     ppH1.segt=PoissonProcess(lambda1,tau)
@@ -35,6 +39,7 @@ SimulationH1 <- function(lambda0, lambda1,T,tau){
 ```
 
 
+`TimeBetweenEvent` compute Time Between Event for a `pp` interval.
 ```{r}
 TimeBetweenEvent <- function(pp){
     n=length(pp)
@@ -49,7 +54,9 @@ DataFrame <- function(pp,tbe){
 ```
 
 ## 2. Simulation of the sequences under $\mathcal{H}_0$ via a Monte Carlo Method
-In this part, we will try to simulate, using a Monte Carlo method, a set of $10^5$ independant samples, under the assumption that $\lambda=\lambda_0$, hence, that we are under the null hypothesis $\mathcal{H}_0$.  
+In this part, we will try to simulate, using a Monte Carlo method, a set of $10^5$ independant samples, under the assumption that $\lambda=\lambda_0$, hence, that we are under the null hypothesis $\mathcal{H}_0$. 
+
+The function `ScanStat` compute the scan statistic for a sequence, given some parameters $T$ and $\tau$. This function returns the value of the scan stat, and the index of the sequence where it happens
 ```{r}
 ScanStat <- function(pp, T, tau){
     n=length(pp)
@@ -58,13 +65,15 @@ ScanStat <- function(pp, T, tau){
     for (i in (1:stop)) {
         x=which((pp>=pp[i])&(pp<=(pp[i]+tau)))
         scan=length(x)
-        if (scan>ScanStat) {ScanStat=scan}
+        if (scan>ScanStat) {ScanStat=scan
+        max=i}
   }   
-    return (c(i,ScanStat))
+    return (c(max,ScanStat))
 }
 ```
 
 We test the scan statistic method for different values of $\lambda_0$. The method of scan statistic we implemented will allow us to have access to the scan test statistic and where it happens in the sequence. 
+This function `EmpDistrib` compute the empirical distribution using a Monte Carlo estimator for the scan statistic method. It returns a Data Frame, containing the value of the scan, its probability and the value of its cumulative distribution function. 
 ```{r}
 EmpDistrib <- function(lambda, n_sample,T,tau){
     pp=PoissonProcess(lambda,T)
@@ -83,6 +92,8 @@ EmpDistrib <- function(lambda, n_sample,T,tau){
     return(EmpDis)
     }
 ```
+
+This function plot the cumulative distribution function associated to an empirical distribution function
 ```{r}
 Plot_CDF <- function(lambda,n_sample,T,tau){
     Emp=EmpDistrib(lambda,n_sample,T,tau)
@@ -103,19 +114,12 @@ tau=1
 ppH0=PoissonProcess(lambda0,T)
 CDF=Plot_CDF(lambda0,n_sample,T,tau)
 ```
-```{r}
-n_sample=10**4
-lambda1=4
-T=10
-tau=1
-ppH0=PoissonProcess(lambda1,T)
-CDF=Plot_CDF(lambda1,n_sample,T,tau)
-```
 
+Compute $p$-value for scan statistic of `ppH1` with `Emp`:
 ```{r}
-PValue <- function(Emp,ppH1, T, tau){
-    scanH1=ScanStat(ppH1,T,tau)[2]
-    index_scanH1=ScanStat(ppH1,T,tau)[1]
+PValue <- function(Emp,ppH, T, tau){
+    scanH1=ScanStat(ppH,T,tau)[2]
+    index_scanH1=ScanStat(ppH,T,tau)[1]
     index=Emp$index_scan
     n=length(index)
     if (scanH1< min(Emp$index_scan)){
@@ -134,8 +138,8 @@ NbSeqH0=10000
 NbSeqH1=NbSeqH0
 DataH0=vector("list")
 DataH1=vector("list")
-lambda0=4
-lambda1=10
+lambda0=2
+lambda1=5
 T=10
 tau=1
 
@@ -165,7 +169,7 @@ TimeBetweenEventList <- function(list,n_list){
 }
 tbe0=TimeBetweenEventList(DataH0,NbSeqH0)
 ```
-We compute the p-value associated to all 5 sequences, and stock them in a vector. 
+We compute the p-value associated to all 10000 sequences, and stock them in a vector. 
 
 ```{r}
 #We start by computing the empirical distribution for lambda0
@@ -183,8 +187,9 @@ for (i in 1:NbSeqH0){
     index_scan = c(index_scan,result[3])
 }
 
-ScS_H0=data.frame(num=(1:NbSeqH0), scan_stat=scan, pvalue_scan=pvalue,class=c(pvalue<0.05)) 
-sum(ScS_H0$class[which(ScS_H0$class==TRUE)])/NbSeqH0
+ScS_H0=data.frame(num=(1:NbSeqH0), scan_stat=scan, pvalue_scan=pvalue,class=c(pvalue<0.05)*1) 
+ScS_H0
+sum(ScS_H0$class[which(ScS_H0$class=='1')])/NbSeqH0
 ```
 
 ```{r}
@@ -201,11 +206,13 @@ for (i in 1:NbSeqH1){
     pvalue=c(pvalue,result[2])
     index_scan=c(index_scan,result[3])
 }
-ScS_H1=data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05), begin_scan=index_scan)
-sum(ScS_H1$class[which(ScS_H1$class==TRUE)])/NbSeqH1
+ScS_H1 = data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05)*1, begin_scan=index_scan)
+ScS_H1
+sum(ScS_H1$class[which(ScS_H1$class=='1')])/NbSeqH1
 
 ```
 
+`ScanStatMC` compute local score for `Emp`:
 ```{r}
 ScanStatMC <- function(NbSeq, T, tau, Emp, pp0){
     scan=c()
@@ -227,6 +234,7 @@ ScanStatMC <- function(NbSeq, T, tau, Emp, pp0){
 
 ## 3. Local score
 ### 3.1. Distribution of scores via Monte Carlo
+`ComputeE` compute `E` coefficient:
 ```{r}
 ComputeE <- function(lambda0, lambda1){
     E = 1
@@ -240,6 +248,7 @@ ComputeE <- function(lambda0, lambda1){
 }
 ```
 
+`ScoreDistribEmpiric` compute score for empiric distribution:
 ```{r}
 ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
     E = ComputeE(lambda0, lambda1)
@@ -335,26 +344,41 @@ LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 
 ## 4. Experience plan for comparaison
 ```{r}
-NbSeq = 10**3
+NbSeq = 10**2
 T = 10
-for (lambda0 in (2:5)){
+for (lambda0 in (2)){
   Sensitivity = c()
   Specificity = c()
   accepted_lambda = c()
 
-  for (lambda1 in c(3:8)){
+  for (lambda1 in c(3)){
     if (lambda0 < lambda1){
-      accepted_lambda=c(accepted_lambda,lambda1)
+      
+      accepted_lambda = c(accepted_lambda,lambda1)
       cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
-      tbe0=vector("list",length=NbSeq)
+      tbe0 = vector("list",length=NbSeq)
       pp0 =  vector("list", length = NbSeq)
+      pp1 =  vector("list", length = NbSeq)
+      tbe1 = vector("list", length =  NbSeq)
+      
+      theoretical_results = c(rep(0,NbSeq), rep(1,NbSeq))
+      
+      
       for (i in (1:NbSeq)) {
+        #Simulation for sequences under H0
         ppi = PoissonProcess(lambda0,T)
         ni=length(ppi)
         pp0[[i]] = ppi
-        tbei=ppi[2:ni]-ppi[1:ni-1]
-        tbe0[[i]]=tbei
-        }
+        tbei = ppi[2:ni]-ppi[1:ni-1]
+        tbe0[[i]] = tbei
+        
+        #Simulation for sequences under H1
+        ppj1 = SimulationH1(lambda0, lambda1, T, tau)
+        nj = length(ppj1)
+        pp1[[i]] = ppj1
+        tbej = ppj1[2:nj]-ppj1[1:nj-1]
+        tbe1[[i]] = tbej
+      }
             
       #cat("- Empiric version:\n")
       Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
@@ -366,6 +390,9 @@ for (lambda0 in (2:5)){
       LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
       options(warn = -1) # Disable warnings print
       SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
+      SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
+      
+      SS_expected = c(SS_H0$class, SS_H1$class)
             
       #cat("Local Score:\n")
       #print(summary(LS_H0))
@@ -391,9 +418,9 @@ for (lambda0 in (2:5)){
       #cat("Scan Statistics:\n")
       #print(summary(SS_H0))
       #cat("Confusion Matrix:\n")
-      print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))$table)
-      Sensitivity = c(Sensitivity,confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))$byClass[1])
-      Specificity = c(Specificity,confusionMatrix(factor(LS_H0$class), factor(SS_H0$class))$byClass[2])
+      print(confusionMatrix(factor(theoretical_results), factor(SS_expected)))
+      #Sensitivity = c(Sensitivity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[1])
+      #Specificity = c(Specificity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[2])
 
       cat("---\n")
       
@@ -408,3 +435,85 @@ for (lambda0 in (2:5)){
 }
 ```
 
+```{r}
+theo = c(0,0,0,1,1,1)
+exp = c(0,1,1,1,1,0)
+
+confusionMatrix(factor(exp), factor(theo), positive = '1') #prédiction puis théorique
+```
+
+```{r}
+NbSeq = 10**2
+T = 10
+lambda0 = 2
+lambda1 = 5
+n_sample=10**4
+
+cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
+tbe0 = vector("list",length=NbSeq)
+pp0 =  vector("list", length = NbSeq)
+pp1 =  vector("list", length = NbSeq)
+tbe1 = vector("list", length =  NbSeq)
+      
+theoretical_results = c(rep(0,NbSeq), rep(1,NbSeq))
+      
+      
+for (i in (1:NbSeq)) {
+  #Simulation for sequences under H0
+  ppi = PoissonProcess(lambda0,T)
+  ni=length(ppi)
+  pp0[[i]] = ppi
+  tbei = ppi[2:ni]-ppi[1:ni-1]
+  tbe0[[i]] = tbei
+        
+  #Simulation for sequences under H1
+  ppj1 = SimulationH1(lambda0, lambda1, T, tau)
+  nj = length(ppj1)
+  pp1[[i]] = ppj1
+  tbej = ppj1[2:nj]-ppj1[1:nj-1]
+  tbe1[[i]] = tbej
+  }
+            
+      Emp = EmpDistrib(lambda0,n_sample,T,tau)
+
+      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
+      SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
+      
+      SS_expected = c(SS_H0$class, SS_H1$class)
+            
+      #cat("Local Score:\n")
+      #print(summary(LS_H0))
+      #cat("Scan Statistics:\n")
+      #print(summary(SS_H0))
+      #cat("Confusion Matrix:\n")
+      #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
+        
+      #cat("- Elisa version:\n")
+      Score = ScoreDistribElisa(lambda0, lambda1, T)
+      Emp = EmpDistrib(lambda0,n_sample,T,tau)
+
+      X_seq = Score$Score_X
+      P_X = Score$P_X
+            
+      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
+      options(warn = -1) # Disable warnings print
+
+      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
+        
+      #cat("Local Score:\n")
+      #print(summary(LS_H0))
+      #cat("Scan Statistics:\n")
+      #print(summary(SS_H0))
+      #cat("Confusion Matrix:\n")
+      print(confusionMatrix(factor(theoretical_results), factor(SS_expected)))
+      #Sensitivity = c(Sensitivity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[1])
+      #Specificity = c(Specificity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[2])
+
+      cat("---\n")
+      
+  titleSens=TeX(paste(r'(Sensitivity for $\lambda_0=$)', lambda0))
+  plot(x=accepted_lambda,y=Sensitivity, type='l', main = titleSens)
+  
+  titleSpec=TeX(paste(r'(Specificity for $\lambda_0=$)', lambda0))
+  plot(x=accepted_lambda,y=Specificity, type='l', main = titleSpec)
+```
