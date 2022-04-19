@@ -91,7 +91,7 @@ Plot_CDF <- function(lambda,n_sample,T,tau){
     return(Emp)
 }
 ```
-### 2.1 Test of $\mathcal{H}_0: \lambda=\lambda_0$ against $\mathcal{H}_0: \lambda=\lambda_1$, where $\lambda_1 > \lambda_0$ 
+### 2.1. Test of $\mathcal{H}_0: \lambda=\lambda_0$ against $\mathcal{H}_0: \lambda=\lambda_1$, where $\lambda_1 > \lambda_0$ 
 In this part, we will test different values for $\lambda_0$ and $\lambda_1$, and compute the probability of occurrence of a certain scan statistic.
 
 ```{r}
@@ -226,7 +226,7 @@ ScanStatMC <- function(NbSeq, T, tau, Emp, pp0){
 ```
 
 ## 3. Local score
-### Distribution of scores via Monte Carlo
+### 3.1. Distribution of scores via Monte Carlo
 ```{r}
 ComputeE <- function(lambda0, lambda1){
     E = 1
@@ -305,7 +305,7 @@ mtext("Distribution des scores via la méthode théorique",side=1,line=4,col="re
 ```
 
 
-### Local score calculation
+### 3.2. Local score calculation
 ```{r}
 LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
   E = ComputeE(lambda0, lambda1)
