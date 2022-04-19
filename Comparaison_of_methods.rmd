@@ -264,13 +264,34 @@ ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
 ```
 
 ```{r}
+
+lambda0=5
+lambda1=7
+distrib_mc=ScoreDistribEmpiric(lambda0,lambda1,10000,T)
+score_moyen=mean(distrib_mc[,1])
+print(score_moyen)
+score_max=max(distrib_mc[,1])
+print(score_max)
+score_min=min(distrib_mc[,1])
+print(score_min)
+amplitude=abs(score_max-score_min)
+print(amplitude)
+E=ComputeE(lambda0, lambda1)
+print(E)
+barplot(distrib_mc[,2])
+```
+
+
+```{r}
 ScoreDistribElisa <- function(lambda0, lambda1, T){
     E = ComputeE(lambda0, lambda1)
 
     score_max = floor(E*log(lambda1/lambda0))
+    
 
     ## score_min compute
     score_min_c = floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
+    
 
     l = seq(score_min_c,score_max,1)
     borne_inf = (l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
@@ -289,11 +310,9 @@ distrib_score_mc=ScoreDistribEmpiric(2,3,10000,T)
 
 distrib_score_theo=ScoreDistribElisa(2,3,T)
 
+distrib_score_mc
+distrib_score_theo
 
-length(distrib_score_mc[,2])
-length(distrib_score_theo[,2])
-
-#diff_distrib_score=abs(distrib_score_mc[,2]-distrib_score_theo[,2])
 
 #par(mfrow = c(1,2))
 barplot(distrib_score_mc[,2],col="blue",axes=F)
