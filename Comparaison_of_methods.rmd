@@ -380,7 +380,7 @@ for (lambda0 in list_of_lambda0){
       tbe0 = vector("list", length = NbSeq)
       pp0 =  vector("list", length = NbSeq)
       pp1 =  vector("list", length = NbSeq)
-      tbe1 = vector("list", length =  NbSeq)
+      tbe1 = vector("list", length = NbSeq)
       
       theoretical_results = c(rep(0,NbSeq), rep(1,NbSeq))
       
@@ -457,13 +457,6 @@ for (lambda0 in list_of_lambda0){
 ```
 
 ```{r}
-theo = c(0,0,0,1,1,1)
-exp = c(0,1,1,1,1,0)
-
-confusionMatrix(factor(exp), factor(theo), positive = '1') #prédiction puis théorique
-```
-
-```{r}
 NbSeq = 10**2
 T = 10
 lambda0 = 2
@@ -471,7 +464,7 @@ lambda1 = 5
 n_sample=10**4
 
 cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
-tbe0 = vector("list",length=NbSeq)
+tbe0 = vector("list", length = NbSeq)
 pp0 =  vector("list", length = NbSeq)
 pp1 =  vector("list", length = NbSeq)
 tbe1 = vector("list", length =  NbSeq)
