@@ -505,6 +505,7 @@ x.verif=seq(range(x)[1],range(x)[2],1)
 #dist.theo.scores=lambda0*exp(-lambda0*(A*x.verif-B))
 #dist.theo.scores
 dist.emp.scores
+barplot(dist.emp.scores)
 
 ```
 

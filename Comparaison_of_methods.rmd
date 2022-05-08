@@ -273,6 +273,7 @@ ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
 ```
 
 ```{r}
+
 lambda0=5
 lambda1=7
 distrib_mc=ScoreDistribEmpiric(lambda0,lambda1,10000,T)
@@ -289,14 +290,17 @@ print(E)
 barplot(distrib_mc[,2])
 ```
 
+
 ```{r}
 ScoreDistribTheo <- function(lambda0, lambda1, T){
     E = ComputeE(lambda0, lambda1)
 
     score_max = floor(E*log(lambda1/lambda0))
+    
 
     ## score_min compute
     score_min_c = floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
+    
 
     l = seq(score_min_c,score_max,1)
     borne_inf = (l-E*log(lambda1/lambda0))/(E*(lambda0-lambda1))
@@ -311,6 +315,16 @@ ScoreDistribTheo <- function(lambda0, lambda1, T){
 ```
 
 ```{r}
+
+T=10
+distrib_score_mc=ScoreDistribEmpiric(2,3,10000,T)
+
+distrib_score_theo=ScoreDistribElisa(2,3,T)
+
+distrib_score_mc
+distrib_score_theo
+
+
 distrib_score_mc = ScoreDistribEmpiric(2,3,10000,T)
 distrib_score_theo = ScoreDistribTheo(2,3,T)
 
@@ -320,6 +334,7 @@ plot_graph_distrib_score <- function(distrib_score_theo, distrib_score_mc){
 
     #diff_distrib_score=abs(distrib_score_mc[,2]-distrib_score_theo[,2])
 
+    
     #par(mfrow = c(1,2))
     barplot(distrib_score_mc[,2],col="blue",axes=F)
     mtext("Distribution of scores via Monte Carlo",side=1,line=2.5,col="blue")
@@ -329,9 +344,9 @@ plot_graph_distrib_score <- function(distrib_score_theo, distrib_score_mc){
     mtext("Distribution of scores using the theoretical method",side=1,line=4,col="red") 
 }
 
+
 plot_graph_distrib_score(distrib_score_theo, distrib_score_mc)
 ```
-
 
 ### 3.2. Local score calculation
 ```{r}
