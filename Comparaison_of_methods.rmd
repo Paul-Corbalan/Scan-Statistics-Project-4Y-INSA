@@ -292,7 +292,7 @@ barplot(distrib_mc[,2])
 
 
 ```{r}
-ScoreDistribElisa <- function(lambda0, lambda1, T){
+ScoreDistribTheo <- function(lambda0, lambda1, T){
     E = ComputeE(lambda0, lambda1)
 
     score_max = floor(E*log(lambda1/lambda0))
@@ -326,7 +326,7 @@ distrib_score_theo
 
 
 distrib_score_mc = ScoreDistribEmpiric(2,3,10000,T)
-distrib_score_theo = ScoreDistribElisa(2,3,T)
+distrib_score_theo = ScoreDistribTheo(2,3,T)
 
 plot_graph_distrib_score <- function(distrib_score_theo, distrib_score_mc){
     # length(distrib_score_mc[,2])
@@ -434,7 +434,7 @@ for (lambda0 in (2)){
       #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
         
       #cat("- Elisa version:\n")
-      Score = ScoreDistribElisa(lambda0, lambda1, T)
+      Score = ScoreDistribTheo(lambda0, lambda1, T)
       Emp = EmpDistrib(lambda0,n_sample,T,tau)
 
       X_seq = Score$Score_X
@@ -521,7 +521,7 @@ for (i in (1:NbSeq)) {
       #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
         
       #cat("- Elisa version:\n")
-      Score = ScoreDistribElisa(lambda0, lambda1, T)
+      Score = ScoreDistribTheo(lambda0, lambda1, T)
       Emp = EmpDistrib(lambda0,n_sample,T,tau)
 
       X_seq = Score$Score_X
