@@ -363,17 +363,21 @@ LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 ```{r}
 NbSeq = 10**2
 T = 10
-for (lambda0 in (2)){
+
+list_of_lambda0 = c(2)
+list_of_lambda1 = c(3)
+
+for (lambda0 in list_of_lambda0){
   Sensitivity = c()
   Specificity = c()
   accepted_lambda = c()
 
-  for (lambda1 in c(3)){
+  for (lambda1 in list_of_lambda1){
     if (lambda0 < lambda1){
       
       accepted_lambda = c(accepted_lambda,lambda1)
       cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
-      tbe0 = vector("list",length=NbSeq)
+      tbe0 = vector("list", length = NbSeq)
       pp0 =  vector("list", length = NbSeq)
       pp1 =  vector("list", length = NbSeq)
       tbe1 = vector("list", length =  NbSeq)
