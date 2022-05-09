@@ -207,7 +207,8 @@ for (i in 1:NbSeqH1){
     pvalue=c(pvalue,result[2])
     index_scan=c(index_scan,result[3])
 }
-ScS_H1 = data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=as.numeric(pvalue<0.05), begin_scan=index_scan)
+ScS_H1 = data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=as.numeric(pvalue<0.05))
+ScS_H1$begin_scan=index_scan
 ScS_H1
 sum(ScS_H1$class[which(ScS_H1$class=='1')])/NbSeqH1
 
@@ -320,7 +321,7 @@ ScoreDistribTheo <- function(lambda0, lambda1, T){
 T=10
 distrib_score_mc=ScoreDistribEmpiric(2,3,10000,T)
 
-distrib_score_theo=ScoreDistribElisa(2,3,T)
+distrib_score_theo=ScoreDistribTheo(2,3,T)
 
 distrib_score_mc
 distrib_score_theo
