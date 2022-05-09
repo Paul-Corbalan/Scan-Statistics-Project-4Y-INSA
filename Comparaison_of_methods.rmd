@@ -84,6 +84,7 @@ EmpDistrib <- function(lambda, n_sample,T,tau){
         scan=rbind(scan,ScanStat(pp,T, tau)[2])
         index=rbind(index,ScanStat(pp,T, tau)[1])
     }
+    scan=unlist(scan)
     min_scan=min(scan)-1
     max_scan=max(scan)
     table1=table(factor(scan, levels = min_scan:max_scan))
@@ -206,7 +207,7 @@ for (i in 1:NbSeqH1){
     pvalue=c(pvalue,result[2])
     index_scan=c(index_scan,result[3])
 }
-ScS_H1 = data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=(pvalue<0.05)*1, begin_scan=index_scan)
+ScS_H1 = data.frame(num=1:NbSeqH1, scan_stat=scan, pvalue_scan=pvalue, class=as.numeric(pvalue<0.05), begin_scan=index_scan)
 ScS_H1
 sum(ScS_H1$class[which(ScS_H1$class=='1')])/NbSeqH1
 
@@ -227,7 +228,7 @@ ScanStatMC <- function(NbSeq, T, tau, Emp, pp0){
         index_scan=c(index_scan,result[3])
     }
 
-    ScS_H0=data.frame(num=(1:NbSeq), scan_stat=scan, pvalue_scan=pvalue,class=c(pvalue<0.05))
+    ScS_H0=data.frame(num=(1:NbSeq), scan_stat=scan, pvalue_scan=pvalue,class=as.numeric(pvalue<0.05))
     return(ScS_H0)
 }
 ```
@@ -361,7 +362,6 @@ LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
   
   for (i in 1:NbSeq){
       x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
-      X = c(X,x)
       LS = localScoreC(x)$localScore[1]
       
       daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
@@ -379,15 +379,23 @@ LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 NbSeq = 10**2
 T = 10
 
-list_of_lambda0 = c(2)
-list_of_lambda1 = c(3)
+list_of_lambda = list()
+list_of_lambda[[1]] = c(1, 3)
+list_of_lambda[[2]] = c(1, 4)
+list_of_lambda[[3]] = c(1, 5)
+list_of_lambda[[4]] = c(2, 4)
+list_of_lambda[[5]] = c(2, 5)
+list_of_lambda[[6]] = c(2, 6)
+list_of_lambda[[7]] = c(4, 5)
+list_of_lambda[[8]] = c(4, 8)
+list_of_lambda[[9]] = c(4, 10)
 
-for (lambda0 in list_of_lambda0){
+for (Lambda in list_of_lambda){
+  lambda0 = Lambda[1]
+  lambda1 = Lambda[2]
   Sensitivity = c()
   Specificity = c()
   accepted_lambda = c()
-
-  for (lambda1 in list_of_lambda1){
     if (lambda0 < lambda1){
       
       accepted_lambda = c(accepted_lambda,lambda1)
@@ -460,7 +468,6 @@ for (lambda0 in list_of_lambda0){
 
       cat("---\n")
       
-    }
   }
   titleSens=TeX(paste(r'(Sensitivity for $\lambda_0=$)', lambda0))
   plot(x=accepted_lambda,y=Sensitivity, type='l', main = titleSens)
