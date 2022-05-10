@@ -378,190 +378,6 @@ LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 
 ## 4. Experience plan for comparaison
 ```{r}
-NbSeq = 10**2
-T = 10
-
-list_of_lambda = list()
-list_of_lambda[[1]] = c(1, 3)
-list_of_lambda[[2]] = c(1, 4)
-list_of_lambda[[3]] = c(1, 5)
-list_of_lambda[[4]] = c(2, 4)
-list_of_lambda[[5]] = c(2, 5)
-list_of_lambda[[6]] = c(2, 6)
-list_of_lambda[[7]] = c(4, 5)
-list_of_lambda[[8]] = c(4, 8)
-list_of_lambda[[9]] = c(4, 10)
-
-for (Lambda in list_of_lambda){
-  lambda0 = Lambda[1]
-  lambda1 = Lambda[2]
-  Sensitivity = c()
-  Specificity = c()
-  accepted_lambda = c()
-    if (lambda0 < lambda1){
-      
-      accepted_lambda = c(accepted_lambda,lambda1)
-      cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
-      tbe0 = vector("list", length = NbSeq)
-      pp0 =  vector("list", length = NbSeq)
-      pp1 =  vector("list", length = NbSeq)
-      tbe1 = vector("list", length = NbSeq)
-      
-      theoretical_results = c(rep(0,NbSeq), rep(1,NbSeq))
-      
-      
-      for (i in (1:NbSeq)) {
-        #Simulation for sequences under H0
-        ppi = PoissonProcess(lambda0,T)
-        ni=length(ppi)
-        pp0[[i]] = ppi
-        tbei = ppi[2:ni]-ppi[1:ni-1]
-        tbe0[[i]] = tbei
-        
-        #Simulation for sequences under H1
-        ppj1 = SimulationH1(lambda0, lambda1, T, tau)
-        nj = length(ppj1)
-        pp1[[i]] = ppj1
-        tbej = ppj1[2:nj]-ppj1[1:nj-1]
-        tbe1[[i]] = tbej
-      }
-            
-      #cat("- Empiric version:\n")
-      Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
-      
-      X_seq = Score$Score_X
-      P_X = Score$P_X
-      
-      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-      options(warn = -1) # Disable warnings print
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-      SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
-      
-      SS_expected = c(SS_H0$class, SS_H1$class)
-            
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
-        
-      #cat("- Elisa version:\n")
-      Score = ScoreDistribTheo(lambda0, lambda1, T)
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
-
-      X_seq = Score$Score_X
-      P_X = Score$P_X
-            
-      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-      options(warn = -1) # Disable warnings print
-
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-        
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      print(confusionMatrix(factor(theoretical_results), factor(SS_expected)))
-      #Sensitivity = c(Sensitivity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[1])
-      #Specificity = c(Specificity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[2])
-
-      cat("---\n")
-      
-  }
-  titleSens=TeX(paste(r'(Sensitivity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Sensitivity, type='l', main = titleSens)
-  
-  titleSpec=TeX(paste(r'(Specificity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Specificity, type='l', main = titleSpec)
-
-}
-```
-
-```{r}
-NbSeq = 10**2
-T = 10
-lambda0 = 2
-lambda1 = 5
-n_sample=10**4
-
-cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
-tbe0 = vector("list", length = NbSeq)
-pp0 =  vector("list", length = NbSeq)
-pp1 =  vector("list", length = NbSeq)
-tbe1 = vector("list", length =  NbSeq)
-      
-theoretical_results = c(rep(0,NbSeq), rep(1,NbSeq))
-      
-      
-for (i in (1:NbSeq)) {
-  #Simulation for sequences under H0
-  ppi = PoissonProcess(lambda0,T)
-  ni=length(ppi)
-  pp0[[i]] = ppi
-  tbei = ppi[2:ni]-ppi[1:ni-1]
-  tbe0[[i]] = tbei
-        
-  #Simulation for sequences under H1
-  ppj1 = SimulationH1(lambda0, lambda1, T, tau)
-  nj = length(ppj1)
-  pp1[[i]] = ppj1
-  tbej = ppj1[2:nj]-ppj1[1:nj-1]
-  tbe1[[i]] = tbej
-  }
-            
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
-
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-      SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
-      
-      SS_expected = c(SS_H0$class, SS_H1$class)
-            
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
-        
-      #cat("- Elisa version:\n")
-      Score = ScoreDistribTheo(lambda0, lambda1, T)
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
-
-      X_seq = Score$Score_X
-      P_X = Score$P_X
-            
-      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-      options(warn = -1) # Disable warnings print
-
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-        
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      print(confusionMatrix(factor(theoretical_results), factor(SS_expected)))
-      #Sensitivity = c(Sensitivity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[1])
-      #Specificity = c(Specificity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[2])
-
-      cat("---\n")
-      
-  titleSens=TeX(paste(r'(Sensitivity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Sensitivity, type='l', main = titleSens)
-  
-  titleSpec=TeX(paste(r'(Specificity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Specificity, type='l', main = titleSpec)
-```
-
-
-
-
-
-## CompareMethods
-```{r}
 CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
     if (lambda0 < lambda1){
         
@@ -630,66 +446,42 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
 ```
 
 ```{r}
-NbSeq = 100
+NbSeq = 10**2
 T = 10
 tau = 2
-lambda0 = 0.3
-lambda1 = 0.5
 
-result1 = CompareMethods(lambda0, lambda1, NbSeq, T, tau)
+list_of_lambda = list()
+list_of_lambda[[1]] = c(1, 3)
+list_of_lambda[[2]] = c(1, 4)
+list_of_lambda[[3]] = c(1, 5)
+list_of_lambda[[4]] = c(2, 4)
+list_of_lambda[[5]] = c(2, 5)
+list_of_lambda[[6]] = c(2, 6)
+list_of_lambda[[7]] = c(4, 5)
+list_of_lambda[[8]] = c(4, 8)
+list_of_lambda[[9]] = c(4, 10)
 
-lambda0 = 0.01
-lambda1 = 1
+i = 1
+legend_list = c()
 
-result2 = CompareMethods(lambda0, lambda1, NbSeq, T, tau)
-
-lambda0 = 1
-lambda1 = 1.1
-
-result3 = CompareMethods(lambda0, lambda1, NbSeq, T, tau)
-
-
-lambda0 = 0.9
-lambda1 = 2
-
-result4 = CompareMethods(lambda0, lambda1, NbSeq, T, tau)
-
-
-title_ROC = TeX(paste(r'(ROC curve for several values of $\lambda_0$ and $\lambda_1$)'))
-
-perf1SS = result1[1]
-perf1LS = result1[2]
-                
-perf2SS = result2[1]
-perf2LS = result2[2]
-
-perf3SS = result3[1]
-perf3LS = result3[2]
-
-perf4SS = result4[1]
-perf4LS = result4[2]
-
-
-plot(perf1SS$performance.SS, lty=1, col="coral", lwd = 2)
-par(new=T)
-plot(perf1LS$performance.LS, lty=2, col="coral",lwd = 2)
-
-par(new=T)
-plot(perf2SS$performance.SS, lty=1, col="cyan4", lwd = 2)
-par(new=T)
-plot(perf2LS$performance.LS, lty=2, col="cyan4", lwd = 2)
-
-par(new=T)
-plot(perf3SS$performance.SS, lty=1, col="magenta4", lwd = 2)
-par(new=T)
-plot(perf3LS$performance.LS, lty=2, col="magenta4", lwd = 2)
-
-par(new=T)
-plot(perf4SS$performance.SS, lty=1, col="olivedrab4", lwd = 2)
-par(new=T)
-plot(perf4LS$performance.LS, lty=2, col="olivedrab4", lwd = 2,main=title_ROC)
-
-legend(0.5, 0.3, legend=c("lambda0 = 0.3, lambda1 = 0.5", "lambda0 = 1, lambda1 = 9", "lambda0 = 2, lambda1 = 6", "lambda0 = 8, lambda1 = 9", "lambda0 = 0.1, lambda1 = 0.2")
-       ,col=c("coral", "cyan4", "magenta4", "olivedrab4", "lightgoldenrod3"),  lty=1, cex=0.9,lwd=4,
-       box.lty=0)
+for (Lambda in list_of_lambda){
+  lambda0 = Lambda[1]
+  lambda1 = Lambda[2]
+  result = CompareMethods(lambda0, lambda1, NbSeq, T, tau)
+  title_ROC = TeX(paste(r'(ROC curve for several values of $\lambda_0$ and $\lambda_1$)'))
+  
+  perfSS = result[1]
+  perfLS = result[2]
+  
+  
+  plot(perfSS$performance.SS, lty=1, col=i, lwd = 2)
+  par(new=T)
+  plot(perfLS$performance.LS, lty=2, col=i,lwd = 2)
+  
+  legend_list=c(legend_list, paste(c("lambda0 = ", lambda0, ", lambda1 = ", lambda1), collapse = ""))
+  
+  i=i+1
+}
+  
+legend(0.5, 0.3, legend=legend_list, col=1:length(list_of_lambda),  lty=1, cex=0.9,lwd=4, box.lty=0)
 ```
