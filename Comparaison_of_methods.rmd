@@ -356,24 +356,28 @@ plot_graph_distrib_score(distrib_score_theo, distrib_score_mc)
 ### 3.2. Local score calculation
 ```{r}
 LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
-  E = ComputeE(lambda0, lambda1)
-  
-  pvalue = c()
-  X = c()
-  
-  min_X = min(X_seq)
-  max_X = max(X_seq)
-  
-  for (i in 1:NbSeq){
-      x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
-      LS = localScoreC(x)$localScore[1]
-      
-      daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
-      options(warn = -1) # Disable warnings print
-      
-      pvalue = c(pvalue, daudin_result)
+    E = ComputeE(lambda0, lambda1)
+
+    pvalue = c()
+
+    min_X = min(X_seq)
+    max_X = max(X_seq)
+
+    NbSeq.NonNulles = 0
+
+    for (i in 1:NbSeq){
+        x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
+        if (length(x)!=0){
+            LS = localScoreC(x)$localScore[1]
+
+            daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
+            options(warn = -1) # Disable warnings print
+
+            pvalue = c(pvalue, daudin_result)
+            NbSeq.NonNulles = NbSeq.NonNulles + 1
+        }
   }
-  LS_H0=data.frame(num=1:NbSeq, pvalue_scan=pvalue, class=as.numeric(pvalue<0.05))
+  LS_H0=data.frame(num=1:NbSeq.NonNulles, pvalue_scan=pvalue, class=as.numeric(pvalue<0.05))
   return(LS_H0)
 }
 ```
@@ -451,7 +455,7 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau_scan, tau_H1){
 ```
 
 ```{r}
-NbSeq = 10**2
+NbSeq = 10**4
 T = 10
 tau = 2
 
