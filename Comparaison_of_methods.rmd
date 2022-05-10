@@ -380,7 +380,7 @@ LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
 
 ## 4. Experience plan for comparaison
 ```{r}
-CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
+CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau_scan, tau_H1){
     if (lambda0 < lambda1){
         
         cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
@@ -398,7 +398,7 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
             tbe0[[i]] = tbei
             
             #Simulation for sequences under H1
-            ppj1 = SimulationH1(lambda0, lambda1, T, 3)
+            ppj1 = SimulationH1(lambda0, lambda1, T, tau_H1)
             nj = length(ppj1)
             pp1[[i]] = ppj1
             tbej = ppj1[2:nj]-ppj1[1:nj-1]
@@ -412,9 +412,9 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
         LS_obtained = c(LS_H0$class, LS_H1$class)
         options(warn = -1) 
           
-        Emp = EmpDistrib(lambda0,10**4,T,tau)
-        SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-        SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
+        # Emp = EmpDistrib(lambda0, 10**4, T, tau_scan)
+        SS_H0 = ScanStatMC(NbSeq, T, tau_scan, Emp, pp0)
+        SS_H1 = ScanStatMC(NbSeq, T, tau_scan, Emp, pp1)
         SS_obtained = c(SS_H0$class, SS_H1$class)
           
                     
