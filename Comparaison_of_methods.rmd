@@ -142,8 +142,9 @@ NbSeqH0=10000
 NbSeqH1=NbSeqH0
 DataH0=vector("list")
 DataH1=vector("list")
-lambda0=2
+lambda0=1
 lambda1=5
+
 T=10
 tau=1
 
@@ -301,9 +302,6 @@ ScoreDistribTheo <- function(lambda0, lambda1, T){
     E = ComputeE(lambda0, lambda1)
 
     score_max = floor(E*log(lambda1/lambda0))
-    
-
-    ## score_min compute
     score_min_c = floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
     
 
@@ -334,10 +332,6 @@ distrib_score_mc = ScoreDistribEmpiric(2,3,10000,T)
 distrib_score_theo = ScoreDistribTheo(2,3,T)
 
 plot_graph_distrib_score <- function(distrib_score_theo, distrib_score_mc){
-    # length(distrib_score_mc[,2])
-    # length(distrib_score_theo[,2])
-
-    #diff_distrib_score=abs(distrib_score_mc[,2]-distrib_score_theo[,2])
 
     
     #par(mfrow = c(1,2))
@@ -407,13 +401,13 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
         }
         
         #cat("- Empiric version:\n")
-        Score = ScoreDistribEmpiric(lambda0, lambda1, 10**4, T)
+        Score = ScoreDistribEmpiric(lambda0, lambda1, 10**5, T)
         LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, Score$Score_X, Score$P_X, tbe0)
         LS_H1 = LocalScoreMC(lambda0, lambda1, NbSeq, T, Score$Score_X, Score$P_X, tbe1)
         LS_obtained = c(LS_H0$class, LS_H1$class)
         options(warn = -1) 
           
-        Emp = EmpDistrib(lambda0,10**4,T,tau)
+        Emp = EmpDistrib(lambda0,10**5,T,tau)
         SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
         SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
         SS_obtained = c(SS_H0$class, SS_H1$class)
