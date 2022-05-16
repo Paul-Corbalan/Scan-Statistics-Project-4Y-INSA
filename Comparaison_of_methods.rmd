@@ -275,7 +275,7 @@ ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
 ```
 
 ```{r}
-
+T=10
 lambda0=5
 lambda1=7
 distrib_mc=ScoreDistribEmpiric(lambda0,lambda1,10000,T)
@@ -289,7 +289,7 @@ amplitude=abs(score_max-score_min)
 print(amplitude)
 E=ComputeE(lambda0, lambda1)
 print(E)
-barplot(distrib_mc[,2])
+barplot(distrib_mc[,2],names.arg=distrib_mc[,1])
 ```
 
 
