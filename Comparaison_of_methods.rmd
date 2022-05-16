@@ -279,9 +279,11 @@ ScoreDistribEmpiric <- function(lambda0, lambda1, n_sample, T){
 ```
 
 ```{r}
+
 T=10
 lambda0=5
 lambda1=7
+
 distrib_mc=ScoreDistribEmpiric(lambda0,lambda1,10000,T)
 score_moyen=mean(distrib_mc[,1])
 print(score_moyen)
