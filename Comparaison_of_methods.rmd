@@ -11,6 +11,8 @@ library("localScore")
 library("latex2exp")
 library("Rcpp")
 library("caret")
+library("ROCR")
+library("pROC")
 ```
 
 ## 1. Proposition for simulations under $\mathcal{H}_1$
@@ -119,17 +121,18 @@ CDF=Plot_CDF(lambda0,n_sample,T,tau)
 Compute $p$-value for scan statistic of `ppH1` with `Emp`:
 ```{r}
 PValue <- function(Emp,ppH, T, tau){
-    scanH1=ScanStat(ppH,T,tau)[2]
-    index_scanH1=ScanStat(ppH,T,tau)[1]
-    index=Emp$index_scan
+    SS = ScanStat(ppH,T,tau)
+    scanH = SS[2]
+    index_scanH = SS[1]
+    index = Emp$index_scan
     n=length(index)
-    if (scanH1< min(Emp$index_scan)){
-        return (c(scanH1,1,index_scanH1))
+    if (scanH< min(Emp$index_scan)){
+        return (c(scanH,1,index_scanH))
         } else{
-            if(min(Emp$index_scan)<scanH1 && scanH1<=max(Emp$index_scan)){
-                return(c(scanH1,1-Emp$cdf[scanH1-min(Emp$index_scan)+1],index_scanH1))
-            } else{return (c(scanH1,0,index_scanH1))}}
-}
+            if(min(Emp$index_scan)<scanH && scanH<=max(Emp$index_scan)){
+                return(c(scanH,1-Emp$cdf[scanH-min(Emp$index_scan)],index_scanH))
+            } else{return (c(scanH,0,index_scanH))}}
+    }
 ```
 
 ### 2.2. Simulation under $\mathcal{H}_0$ and computation of p-values
@@ -139,8 +142,9 @@ NbSeqH0=10000
 NbSeqH1=NbSeqH0
 DataH0=vector("list")
 DataH1=vector("list")
-lambda0=2
+lambda0=1
 lambda1=5
+
 T=10
 tau=1
 
@@ -298,9 +302,6 @@ ScoreDistribTheo <- function(lambda0, lambda1, T){
     E = ComputeE(lambda0, lambda1)
 
     score_max = floor(E*log(lambda1/lambda0))
-    
-
-    ## score_min compute
     score_min_c = floor(E*log(lambda1/lambda0)+E*(lambda0-lambda1)*T)
     
 
@@ -331,10 +332,6 @@ distrib_score_mc = ScoreDistribEmpiric(2,3,10000,T)
 distrib_score_theo = ScoreDistribTheo(2,3,T)
 
 plot_graph_distrib_score <- function(distrib_score_theo, distrib_score_mc){
-    # length(distrib_score_mc[,2])
-    # length(distrib_score_theo[,2])
-
-    #diff_distrib_score=abs(distrib_score_mc[,2]-distrib_score_theo[,2])
 
     
     #par(mfrow = c(1,2))
@@ -353,204 +350,134 @@ plot_graph_distrib_score(distrib_score_theo, distrib_score_mc)
 ### 3.2. Local score calculation
 ```{r}
 LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
-  E = ComputeE(lambda0, lambda1)
-  
-  pvalue = c()
-  X = c()
-  
-  min_X = min(X_seq)
-  max_X = max(X_seq)
-  
-  for (i in 1:NbSeq){
-      x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
-      LS = localScoreC(x)$localScore[1]
-      
-      daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
-      options(warn = -1) # Disable warnings print
-      
-      pvalue = c(pvalue, daudin_result)
+    E = ComputeE(lambda0, lambda1)
+    pvalue = c()
+    X = c()
+    min_X = min(X_seq)
+    max_X = max(X_seq)
+    NbSeq.NonNulles = 0
+    for (i in 1:NbSeq){
+        x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
+        if (length(x)!=0){
+            X = c(X,x)
+            LS = localScoreC(x)$localScore[1]
+            daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
+            options(warn = -1) # Disable warnings print
+            pvalue = c(pvalue, daudin_result)
+            NbSeq.NonNulles = NbSeq.NonNulles + 1
+
+        }
   }
-  LS_H0=data.frame(num=1:NbSeq, pvalue_scan=pvalue, class=(pvalue<0.05))
+  LS_H0=data.frame(num=1:NbSeq.NonNulles, pvalue_scan=pvalue, class=(pvalue<0.05)*1)
   return(LS_H0)
 }
 ```
 
 ## 4. Experience plan for comparaison
 ```{r}
-NbSeq = 10**2
-T = 10
-
-list_of_lambda = list()
-list_of_lambda[[1]] = c(1, 3)
-list_of_lambda[[2]] = c(1, 4)
-list_of_lambda[[3]] = c(1, 5)
-list_of_lambda[[4]] = c(2, 4)
-list_of_lambda[[5]] = c(2, 5)
-list_of_lambda[[6]] = c(2, 6)
-list_of_lambda[[7]] = c(4, 5)
-list_of_lambda[[8]] = c(4, 8)
-list_of_lambda[[9]] = c(4, 10)
-
-for (Lambda in list_of_lambda){
-  lambda0 = Lambda[1]
-  lambda1 = Lambda[2]
-  Sensitivity = c()
-  Specificity = c()
-  accepted_lambda = c()
+CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
     if (lambda0 < lambda1){
-      
-      accepted_lambda = c(accepted_lambda,lambda1)
-      cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
-      tbe0 = vector("list", length = NbSeq)
-      pp0 =  vector("list", length = NbSeq)
-      pp1 =  vector("list", length = NbSeq)
-      tbe1 = vector("list", length = NbSeq)
-      
-      theoretical_results = c(rep(0,NbSeq), rep(1,NbSeq))
-      
-      
-      for (i in (1:NbSeq)) {
-        #Simulation for sequences under H0
-        ppi = PoissonProcess(lambda0,T)
-        ni=length(ppi)
-        pp0[[i]] = ppi
-        tbei = ppi[2:ni]-ppi[1:ni-1]
-        tbe0[[i]] = tbei
         
-        #Simulation for sequences under H1
-        ppj1 = SimulationH1(lambda0, lambda1, T, tau)
-        nj = length(ppj1)
-        pp1[[i]] = ppj1
-        tbej = ppj1[2:nj]-ppj1[1:nj-1]
-        tbe1[[i]] = tbej
-      }
-            
-      #cat("- Empiric version:\n")
-      Score = ScoreDistribEmpiric(lambda0, lambda1, NbSeq, T)
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
-      
-      X_seq = Score$Score_X
-      P_X = Score$P_X
-      
-      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-      options(warn = -1) # Disable warnings print
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-      SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
-      
-      SS_expected = c(SS_H0$class, SS_H1$class)
-            
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
+        cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
+        tbe0 = vector("list",length=NbSeq)
+        pp0 =  vector("list", length = NbSeq)
+        pp1 =  vector("list", length = NbSeq)
+        tbe1 = vector("list", length =  NbSeq)
         
-      #cat("- Elisa version:\n")
-      Score = ScoreDistribTheo(lambda0, lambda1, T)
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
-
-      X_seq = Score$Score_X
-      P_X = Score$P_X
+        for (i in (1:NbSeq)) {
+            #Simulation for sequences under H0
+            ppi = PoissonProcess(lambda0,T)
+            ni=length(ppi)
+            pp0[[i]] = ppi
+            tbei = ppi[2:ni]-ppi[1:ni-1]
+            tbe0[[i]] = tbei
             
-      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-      options(warn = -1) # Disable warnings print
-
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
+            #Simulation for sequences under H1
+            ppj1 = SimulationH1(lambda0, lambda1, T, 3)
+            nj = length(ppj1)
+            pp1[[i]] = ppj1
+            tbej = ppj1[2:nj]-ppj1[1:nj-1]
+            tbe1[[i]] = tbej
+        }
         
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      print(confusionMatrix(factor(theoretical_results), factor(SS_expected)))
-      #Sensitivity = c(Sensitivity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[1])
-      #Specificity = c(Specificity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[2])
-
-      cat("---\n")
-      
-  }
-  titleSens=TeX(paste(r'(Sensitivity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Sensitivity, type='l', main = titleSens)
-  
-  titleSpec=TeX(paste(r'(Specificity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Specificity, type='l', main = titleSpec)
-
+        #cat("- Empiric version:\n")
+        Score = ScoreDistribEmpiric(lambda0, lambda1, 10**5, T)
+        LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, Score$Score_X, Score$P_X, tbe0)
+        LS_H1 = LocalScoreMC(lambda0, lambda1, NbSeq, T, Score$Score_X, Score$P_X, tbe1)
+        LS_obtained = c(LS_H0$class, LS_H1$class)
+        options(warn = -1) 
+          
+        Emp = EmpDistrib(lambda0,10**5,T,tau)
+        SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
+        SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
+        SS_obtained = c(SS_H0$class, SS_H1$class)
+          
+                    
+        cat("--- Confusion matrix for scan statistic method --- \n")
+        theoretical_results_SS = c(rep(0,length(SS_H0$num)), rep(1,length(SS_H1$num)))
+        print(confusionMatrix(as.factor(SS_obtained), as.factor(theoretical_results_SS),
+                              dnn = c("Prediction", "Reference"))$table)
+        roc_SS = roc(theoretical_results_SS, SS_obtained)
+        areaSS = auc(roc_SS)
+        cat("Area under the ROC curve for SS = ", areaSS, "\n")
+          
+        cat("--- Confusion matrix for local score method --- \n")
+        theoretical_results_LS = c(rep(0,length(LS_H0$num)), rep(1,length(LS_H1$num)))
+        print(confusionMatrix(as.factor(LS_obtained), as.factor(theoretical_results_LS),
+                                dnn = c("Prediction", "Reference"))$table)
+          
+        title_ROC = TeX(paste(r'(ROC curve for $H_0: \lambda_0=$)', lambda0, 
+                                r'(against $H_1: \lambda_0=$)', lambda1))
+        pred.SS = prediction(theoretical_results_SS,SS_obtained)
+        pred.LS = prediction(theoretical_results_LS,LS_obtained)
+        perf.SS = performance(pred.SS,"tpr", "fpr")
+        perf.LS = performance(pred.LS,"tpr", "fpr")
+        par(new=T)
+        roc_LS = roc(theoretical_results_LS, LS_obtained)
+        areaLS = auc(roc_LS)
+        cat("Area under the ROC curve for LS = ", areaLS, "\n")
+        cat("-----------------------------------\n")
+        options(warn = -1)        
+        
+        result <- c('performance.SS'= perf.SS,'performance.LS'= perf.LS)
+        return(result)
+    }
 }
 ```
 
 ```{r}
-NbSeq = 10**2
+NbSeq = 10**4
 T = 10
-lambda0 = 2
-lambda1 = 5
-n_sample=10**4
+tau = 2
 
-cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
-tbe0 = vector("list", length = NbSeq)
-pp0 =  vector("list", length = NbSeq)
-pp1 =  vector("list", length = NbSeq)
-tbe1 = vector("list", length =  NbSeq)
-      
-theoretical_results = c(rep(0,NbSeq), rep(1,NbSeq))
-      
-      
-for (i in (1:NbSeq)) {
-  #Simulation for sequences under H0
-  ppi = PoissonProcess(lambda0,T)
-  ni=length(ppi)
-  pp0[[i]] = ppi
-  tbei = ppi[2:ni]-ppi[1:ni-1]
-  tbe0[[i]] = tbei
-        
-  #Simulation for sequences under H1
-  ppj1 = SimulationH1(lambda0, lambda1, T, tau)
-  nj = length(ppj1)
-  pp1[[i]] = ppj1
-  tbej = ppj1[2:nj]-ppj1[1:nj-1]
-  tbe1[[i]] = tbej
-  }
-            
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
+list_of_lambda = list()
+list_of_lambda[[1]] = c(1, 3)
+list_of_lambda[[2]] = c(2, 6)
+list_of_lambda[[3]] = c(4, 7)
+list_of_lambda[[4]] = c(2, 9)
 
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-      SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
-      
-      SS_expected = c(SS_H0$class, SS_H1$class)
-            
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      #print(confusionMatrix(factor(LS_H0$class), factor(SS_H0$class)))
-        
-      #cat("- Elisa version:\n")
-      Score = ScoreDistribTheo(lambda0, lambda1, T)
-      Emp = EmpDistrib(lambda0,n_sample,T,tau)
 
-      X_seq = Score$Score_X
-      P_X = Score$P_X
-            
-      LS_H0 = LocalScoreMC(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0)
-      options(warn = -1) # Disable warnings print
+i = 1
+legend_list = c()
 
-      SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-        
-      #cat("Local Score:\n")
-      #print(summary(LS_H0))
-      #cat("Scan Statistics:\n")
-      #print(summary(SS_H0))
-      #cat("Confusion Matrix:\n")
-      print(confusionMatrix(factor(theoretical_results), factor(SS_expected)))
-      #Sensitivity = c(Sensitivity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[1])
-      #Specificity = c(Specificity,confusionMatrix(factor(theoretical_results), factor(SS_expected))$byClass[2])
-
-      cat("---\n")
-      
-  titleSens=TeX(paste(r'(Sensitivity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Sensitivity, type='l', main = titleSens)
+for (Lambda in list_of_lambda){
+  lambda0 = Lambda[1]
+  lambda1 = Lambda[2]
+  result = CompareMethods(lambda0, lambda1, NbSeq, T, tau)
+  title_ROC = TeX(paste(r'(ROC curve for several values of $\lambda_0$ and $\lambda_1$)'))
   
-  titleSpec=TeX(paste(r'(Specificity for $\lambda_0=$)', lambda0))
-  plot(x=accepted_lambda,y=Specificity, type='l', main = titleSpec)
+  perfSS = result[1]
+  perfLS = result[2]
+  
+  
+  plot(perfSS$performance.SS, lty=1, col=i, lwd = 2)
+  par(new=T)
+  plot(perfLS$performance.LS, lty=2, col=i,lwd = 2)
+  
+  legend_list=c(legend_list, paste(c("lambda0 = ", lambda0, ", lambda1 = ", lambda1), collapse = ""))
+  
+  i=i+1
+}
+  
+legend(0.5, 0.3, legend=legend_list, col=1:length(list_of_lambda),  lty=1, cex=0.9,lwd=4, box.lty=0)
 ```
