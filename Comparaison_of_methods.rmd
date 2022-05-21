@@ -354,30 +354,27 @@ plot_graph_distrib_score(distrib_score_theo, distrib_score_mc)
 LocalScoreMC <- function(lambda0, lambda1, NbSeq, T, X_seq, P_X, tbe0){
     E = ComputeE(lambda0, lambda1)
     pvalue = c()
-    X = c()
     min_X = min(X_seq)
     max_X = max(X_seq)
     NbSeq.NonNulles = 0
     for (i in 1:NbSeq){
         x = floor(E*log(dexp(tbe0[[i]], rate = lambda1)/dexp(tbe0[[i]], rate = lambda0)))
         if (length(x)!=0){
-            X = c(X,x)
             LS = localScoreC(x)$localScore[1]
             daudin_result = daudin(localScore = LS, score_probabilities = P_X, sequence_length = length(x), sequence_min = min_X, sequence_max = max_X)
             options(warn = -1) # Disable warnings print
             pvalue = c(pvalue, daudin_result)
             NbSeq.NonNulles = NbSeq.NonNulles + 1
-
         }
   }
-  LS_H0=data.frame(num=1:NbSeq.NonNulles, pvalue_scan=pvalue, class=(pvalue<0.05)*1)
+  LS_H0=data.frame(num=1:NbSeq.NonNulles, pvalue_scan=pvalue, class=as.numeric(pvalue<0.05))
   return(LS_H0)
 }
 ```
 
 ## 4. Experience plan for comparaison
 ```{r}
-CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
+CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau_scan, tau_H1){
     if (lambda0 < lambda1){
         
         cat("For T = ", T, ", Nb = ", NbSeq, ", lambda0 = ", lambda0, " and lambda1 = ", lambda1, ":\n", sep = "")
@@ -395,7 +392,7 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
             tbe0[[i]] = tbei
             
             #Simulation for sequences under H1
-            ppj1 = SimulationH1(lambda0, lambda1, T, 3)
+            ppj1 = SimulationH1(lambda0, lambda1, T, tau_H1)
             nj = length(ppj1)
             pp1[[i]] = ppj1
             tbej = ppj1[2:nj]-ppj1[1:nj-1]
@@ -409,9 +406,9 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
         LS_obtained = c(LS_H0$class, LS_H1$class)
         options(warn = -1) 
           
-        Emp = EmpDistrib(lambda0,10**5,T,tau)
-        SS_H0 = ScanStatMC(NbSeq, T, tau, Emp, pp0)
-        SS_H1 = ScanStatMC(NbSeq, T, tau, Emp, pp1)
+        Emp = EmpDistrib(lambda0, 10**5, T, tau_scan)
+        SS_H0 = ScanStatMC(NbSeq, T, tau_scan, Emp, pp0)
+        SS_H1 = ScanStatMC(NbSeq, T, tau_scan, Emp, pp1)
         SS_obtained = c(SS_H0$class, SS_H1$class)
           
                     
@@ -450,7 +447,8 @@ CompareMethods <- function(lambda0, lambda1, NbSeq, T, tau){
 ```{r}
 NbSeq = 10**4
 T = 10
-tau = 2
+tau_scan = 2
+tau_H1 = 3
 
 list_of_lambda = list()
 list_of_lambda[[1]] = c(1, 3)
@@ -465,7 +463,7 @@ legend_list = c()
 for (Lambda in list_of_lambda){
   lambda0 = Lambda[1]
   lambda1 = Lambda[2]
-  result = CompareMethods(lambda0, lambda1, NbSeq, T, tau)
+  result = CompareMethods(lambda0, lambda1, NbSeq, T, tau_scan)
   title_ROC = TeX(paste(r'(ROC curve for several values of $\lambda_0$ and $\lambda_1$)'))
   
   perfSS = result[1]
