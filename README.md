@@ -5,6 +5,9 @@ Mathematical researchers are regularly looking for new scan methods to detect at
 
 **Keywords:**  scan statistic, Poisson process, local score, detection of atypical regions, window size
 
+## Code R on the comparison of methods
+In this project, we have tried to implement a new method of scan statistic, using both the Local Score and the scan statistic method. In order to do so, the code [Comparaison_of_methods](./Comparaison_of_methods.rmd) explains step by step the process of creating the sequences, estimating the empirical scan distribution and the empirical score distribution and the computation of the p-values. 
+The comparison of the method has been made on the study of performance curves and confusion matrix, for several values for $(\lambda_0,\lambda_1)$, $\tau$, $\tau_o$ and $\alpha$. Further details are given on the paper. 
 
 ## Dependencies
 ### R libraries
